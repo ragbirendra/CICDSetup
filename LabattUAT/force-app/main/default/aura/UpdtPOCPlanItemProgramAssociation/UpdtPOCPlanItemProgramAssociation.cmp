@@ -1,0 +1,74 @@
+<aura:component implements="flexipage:availableForAllPageTypes,force:appHostable" controller="UpdatePOCPlanItemToolkitAssociation">
+    
+    <aura:attribute name="enteredSku" type="String" />
+    <aura:attribute name="mktItemAssData" type="List" />
+    <aura:attribute name="selectedAssociations" type="List" />
+    <aura:attribute name="delListOfAss" type="String[]" />
+    <aura:attribute name="showLoading" type="Boolean" default="false" />
+	<aura:attribute name="msgToPass" type="String[]"   />
+    <aura:attribute name="openModal" type="Boolean" default="false" /> 
+    <aura:attribute name="YearList" type="Integer[]" />
+    <aura:attribute name="selectedYr" type="String" default="None"/>
+    <!--Modal Popup-->
+    <aura:if isTrue="{!v.openModal}">
+        <c:ModalPopup msgToPass="{!v.msgToPass}" openModal="{!v.openModal}" />
+    </aura:if>
+   <aura:handler name="init" action="{!c.doInit}" value="{!this}"/>
+    <lightning:layout multipleRows="true">
+        <lightning:layoutItem size="12" padding="around-small">
+            <lightning:card title="Search Item By SKU" footer="" class="slds-p-around_medium">
+                <lightning:input type="text" label="Enter SKU Number" aura:id="proSel" value="{!v.enteredSku}" class="slds-p-bottom_small"/>
+                <div style="width: 40%" >
+                    <lightning:select required="true" name="YearList" label="Select Year:" value="{!v.selectedYr}" aura:id="yrSel">
+                        <option value="selectyear"> ----- </option>
+                        <aura:iteration items="{!v.YearList}" var="Yr">
+                            <option text="{!Yr}" value="{!Yr}" />
+                        </aura:iteration>
+                    </lightning:select> 
+                </div>
+                <br/>
+                <br/>
+                <lightning:button name="getItemButt" label="Show Item" 
+                                        onclick="{!c.loadItemRecord}" variant="brand"/>
+            </lightning:card>
+        </lightning:layoutItem>
+        <lightning:layoutItem size="12" padding="around-small">
+            <aura:if isTrue="{!v.showLoading}">
+                <lightning:spinner variant="brand" size="medium" aura:id="lightSpin" />
+            </aura:if>
+            <lightning:card title="Current Associations" footer="" class="slds-p-around_medium">
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                    <thead>
+                        <tr class="slds-line-height_reset">
+                            <th>
+                                Select
+                            </th>
+                            <th>
+                                Associated Marketing Program Name
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <aura:iteration items="{!v.mktItemAssData}" var="thisAssociation">
+                            <tr class="slds-line-height_reset">
+                                <td>
+                                    <lightning:input type="checkbox" value="{!thisAssociation.Id}" aura:id="selCheckBox" onchange="{!c.processDeletion}" />
+                                </td>
+                                <td>
+                                    <span>
+                                        {!thisAssociation.Marketing_Program__r.Name}
+                                    </span>
+                                </td>
+                            </tr>
+                        </aura:iteration>
+                        <tr class="slds-line-height_reset">
+                            <td colspan="2" style="text-align: center;">
+                                <lightning:button name="delAssButt" label="DELETE" onclick="{!c.deleteAssociations}" variant="brand" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </lightning:card>
+        </lightning:layoutItem>
+    </lightning:layout>
+</aura:component>

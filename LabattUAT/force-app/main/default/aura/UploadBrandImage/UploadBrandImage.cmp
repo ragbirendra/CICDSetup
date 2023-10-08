@@ -1,0 +1,52 @@
+<aura:component implements="flexipage:availableForAllPageTypes,force:appHostable" controller="UploadBrandImageCtrl">
+    
+    <aura:attribute name="accept" type="List" default="['.jpg', '.jpeg','.png']"/>
+    <aura:attribute name="multipleFiles" type="Boolean" default="false"/>
+    <aura:attribute name="fileName" type="String" default="No File Selected.." />
+    <aura:attribute name="selectedItemId" type="String" />
+    <aura:attribute name="showImageSection" type="String" />
+	<aura:attribute name="msgToPass" type="String[]"   />
+    <aura:attribute name="brandDetail" type="Brand__c"  />
+    <aura:attribute name="openModal" type="Boolean" default="false" /> 
+  	<aura:attribute name="enteredSku" type="String" />
+	<aura:attribute name="BrandList" type="List" />    
+    <aura:attribute name="selectedBrand" type="string" />
+    <aura:handler name="init" action="{!c.doInit}" value="{!this}" />
+    <!--Modal Popup-->
+    <aura:if isTrue="{!v.openModal}">
+        <c:ModalPopup msgToPass="{!v.msgToPass}" openModal="{!v.openModal}" />
+    </aura:if>
+   
+          <lightning:layout multipleRows="true">      
+            <lightning:layoutItem size="12" padding="around-small">
+                <lightning:card title="Search Brand Name" footer="" class="slds-p-around_medium">
+                <!--<lightning:input type="text" label="Enter Brand Name" value="{!v.enteredSku}" class="slds-p-bottom_small"/>-->
+                 <lightning:select name="select" label="Select Brand" value="{!v.selectedBrand}" aura:id="BrandNameid">
+                <option value="None">None</option>
+
+                <aura:iteration items="{!v.BrandList}" var="st">
+                    <option value="{!st}">{!st}</option>
+                </aura:iteration>
+            	</lightning:select>   
+                <lightning:button name="getItemButt" label="Load Image Functionality" 
+                                        onclick="{!c.ShowImageSave}" variant="brand"/>
+            </lightning:card>   
+            </lightning:layoutItem>
+        <lightning:layoutItem size="12" padding="around-small">
+                     
+                    <aura:if isTrue="{!v.showImageSection}">
+                     <lightning:card  footer="" class="slds-p-around_medium">
+                    <lightning:input aura:id="fuploader" onchange="{!c.handleFilesChange}" 
+                                        type="file" name="file" label="Upload Image" multiple="false"/>
+                    <div class="slds-text-body_small slds-text-color_error">{!v.fileName} </div>
+                    <br/>
+                    <lightning:button label="Cancel" onclick="{!c.handleCancel}" class="slds-m-top--medium" />
+                    <lightning:button label="Save" onclick="{!c.handleSave}"
+                                        variant="brand" class="slds-m-top--medium"/>
+                        </lightning:card>
+                    </aura:if>
+         
+         </lightning:layoutItem>
+        
+    </lightning:layout>
+</aura:component>

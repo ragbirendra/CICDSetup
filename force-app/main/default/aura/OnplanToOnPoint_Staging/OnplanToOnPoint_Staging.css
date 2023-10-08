@@ -1,0 +1,21 @@
+.THIS.slds-spinner_container {  
+  z-index: 10000;
+  position: fixed;   
+}
+
+.THIS.slds-modal__container{
+    max-width: 70rem !important;
+    width:80% !important;
+}
+
+.THIS .slds-grid{
+    background-color:white !important;
+}
+
+.THIS .slds-p-around_large,.THIS .slds-p-around--large{
+    padding:1rem !important;
+}
+
+.THIS .tdPadding{
+    padding:10px !important;
+}

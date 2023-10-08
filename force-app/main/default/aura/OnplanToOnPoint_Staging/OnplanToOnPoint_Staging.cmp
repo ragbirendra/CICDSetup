@@ -1,0 +1,328 @@
+<aura:component controller="stagingController" implements="flexipage:availableForAllPageTypes,lightning:actionOverride,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:appHostable,lightning:isUrlAddressable" access="global">
+    <aura:attribute name="data" type="List"/>
+    <aura:attribute name="columns" type="List"/>
+    <aura:attribute name="recordId" type="String"/>
+    <aura:attribute name="allData" type="Staging_Main__c"  />
+    <aura:attribute name="originalDataSet" type="List[]" default="[]"/>
+    <aura:attribute name="brandList" type="List"/>
+    <aura:attribute name="selectedBrand" type="string"/>
+    
+    <aura:attribute name="DataToReview" type="Staging_Main__c"  />
+    
+    <aura:attribute name="ProgramList" type="List"/>
+    <aura:attribute name="selectedProgram" type="string"/>
+    <aura:attribute name="selectedProgramStartDate" type="string"/>
+    <aura:attribute name="selectedProgramEndDate" type="string"/>
+    <aura:attribute name="ProgramListTOshow" type="boolean" default="true"/>
+    <aura:attribute name="ShowDataTOshow" type="boolean" default="true"/> 
+    <aura:attribute name="allocationTOshow" type="boolean" default="true"/>
+    <aura:attribute name="ShowDownload" type="boolean" default="true"/>
+    <aura:attribute name="ShowMarkAsComplete" type="boolean" default="true"/>
+    <aura:attribute name="ShowReopenProgram" type="boolean" default="true"/>
+    
+    <aura:attribute name="selectedOnPointBrand" type="string"/>
+    <aura:attribute name="BudgetYear" type="string" />
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    
+     <aura:attribute name="isStateComplete" type="boolean" default="false"/>
+    <aura:attribute name="isProgramCompletionToShow" type="boolean" default="false"/>
+    <aura:attribute name="movedToOnPoint" type="boolean" default="false"/>
+    
+    <aura:attribute name="spinner" type="boolean" default="FALSE"/>
+    <aura:attribute name="isOpen" type="boolean" default="false"/>
+    <aura:attribute name="showReviewButton" type="boolean" default="true"/>
+    <aura:attribute name="SaveSKUChange" type="boolean" default="true"/>
+    
+    <aura:attribute name="selectedLookUpRecordSKU" type="sObject" default="{}"/>
+    <aura:attribute  name="selectedLookUpRecordSKUAllocation" type="sObject" default="{}"/>
+	<aura:attribute  name="SelectedAccountRecords" type="sObject" default="{}"/>
+    <aura:attribute name="SelectedProgramRecords" type="sObject" default="{}"/>
+    <aura:attribute name="SelectedBrandRecords" type="sObject" default="{}"/>
+    <aura:attribute name="msgToPass" type="String[]"   />
+    <aura:attribute name="openModal" type="Boolean" default="false" /> 
+    <aura:attribute name="loadSpinner" type="Boolean" default="false" /> 
+
+    <aura:attribute name="pageReference" type="Object"/>
+
+    <aura:attribute name="selectedBudgetYear" type="String" />
+    <aura:attribute name="selectedBusinessLine" type="String" />
+    <aura:attribute name="yearOptions" type="String[]" />
+    <aura:attribute name="showBrandList" type="Boolean" default="true"/>
+    <aura:attribute name="addedAllocations" type="Object[]" />
+    
+    <aura:attribute name="qty" type="Integer" />
+    <aura:handler name="init" action="{!c.doInit}" value="{!this}"/> 
+    <aura:handler name="oSelectedRecordEvent" event="c:selectedsObjectRecordEvent" action="{!c.handleSelectRecord}"/>
+    <lightning:navigation aura:id="navService"/>
+    <aura:if isTrue="{!v.loadSpinner}">
+        <div aura:id="spinnerId" class="slds-spinner_container">
+            <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                <span class="slds-assistive-text">Loading...</span>
+                <div class="slds-spinner__dot-a"></div>
+                <div class="slds-spinner__dot-b"></div>
+            </div>
+        </div>
+   </aura:if> 
+    
+    <aura:if isTrue="{!v.openModal}">
+        <c:ModalPopup msgToPass="{!v.msgToPass}" openModal="{!v.openModal}" />
+    </aura:if>
+    
+     
+    <div class="slds-scrollable_y" aura:id="Modalbackdrop">
+        <div>
+        <lightning:layout verticalAlign="end" title="Please select Year and Business Line to Proceed">
+            <lightning:layoutItem padding="around-small">
+                <lightning:select name="bLineOptSelect" label="Select Business Line" aura:id="bLineSelect" value="{!v.selectedBusinessLine}" >
+                    <option value="None">--None--</option>
+                    <option value="ON">Out of Home</option>
+                    <option value="OFF">In Home</option>
+                </lightning:select>
+            </lightning:layoutItem>
+            <lightning:layoutItem padding="around-small">
+                <lightning:select name="yearOptSelect" label="Select Budget Year" aura:id="yearSelect" value="{!v.selectedBudgetYear}" onchange="{!c.buildBrandList}">
+                    <option value="None">--None--</option>
+                    <aura:iteration items="{!v.yearOptions}" var="yearOpt">
+                        <option text="{!yearOpt}" value="{!yearOpt}"></option>
+                    </aura:iteration>
+                </lightning:select>            
+            </lightning:layoutItem>
+            
+            <lightning:layoutItem padding="around-small">
+                <lightning:select name="select" label="Select Brand Name" aura:id="BrandNameid" value="{!v.selectedBrand}" onchange="{!c.fetchProgramList}" disabled="{!v.showBrandList}"><!-- onchange="{!c.onProgramChange}"--> 
+                    <option value="None">None</option>
+                <aura:iteration items="{!v.brandList}" var="pn">
+                        <option value="{!pn}">{!pn}</option>
+                    </aura:iteration> 
+                </lightning:select>
+            </lightning:layoutItem>
+            <lightning:layoutItem padding="around-small">
+                <lightning:select name="select" label="Select Program" value="{!v.selectedProgram}" aura:id="ProgramNameid" disabled="{!v.ProgramListTOshow}" onchange="{!c.allowToShow}">
+                    <option value="None">None</option>                 
+                    <aura:iteration items="{!v.ProgramList}" var="st">
+                        <option value="{!st}">{!st}</option>
+                    </aura:iteration>
+                </lightning:select>         
+            </lightning:layoutItem>
+            <lightning:layoutItem padding="around-small">
+                    <lightning:button variant="brand" label="View Program Allocations" onclick="{!c.downloadCsv}" disabled="{!v.allocationTOshow}"/> 
+                </lightning:layoutItem>
+                <lightning:layoutItem padding="around-small">
+                	<button class="slds-button slds-button--brand"  onclick="{!c.reviewData}" disabled="{!v.ShowMarkAsComplete}">Complete Program</button> 
+                </lightning:layoutItem>
+                 <lightning:layoutItem padding="around-small">
+                	<button class="slds-button slds-button--brand"  onclick="{!c.reopenStaging}" disabled="{!v.ShowReopenProgram}">Reopen Program</button> 
+                </lightning:layoutItem>            
+        </lightning:layout>
+        </div>
+        <aura:if isTrue="{!v.isProgramCompletionToShow}"> 
+            <aura:if isTrue="{!v.isStateComplete}">
+                    <aura:if isTrue="{!v.movedToOnPoint}">
+                        	<div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_success" role="success" style="margin: 3px;">                    
+                                Selected Program  is &nbsp;<b>moved to OnPoint</b>.           
+                            </div> 
+                        <aura:set attribute="else">
+                            <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_warning" role="alert" style="margin: 3px;">                    
+                                Selected Program Status is &nbsp;<b>Complete</b>. Please Reopen Program for Allocation Changes.           
+                            </div> 
+                        </aura:set>
+                    </aura:if>
+                
+                	
+                
+                <aura:set attribute="else">
+                    
+                    <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_warning" role="alert" style="margin: 3px;">
+                        Selected Program status is &nbsp; <b>Incomplete</b>.      
+                    </div> 
+                </aura:set>
+            </aura:if>
+        </aura:if> 
+        <div>
+            <lightning:layout verticalAlign="end">
+                <lightning:layoutItem padding="around-small" >
+                    <c:customLookup objectAPIName="Staging_Main__c" IconName="standard:account" selectedRecord="{!v.selectedLookUpRecordSKU}" label="SKU No" programName="{!v.selectedProgram}" />
+                </lightning:layoutItem>
+                <lightning:layoutItem padding="around-small">     
+                    <button class="slds-button slds-button--brand" style="margin-top:22px" onclick="{!c.fetchData}" disabled="{!and(v.ShowDataTOshow,v.ShowMarkAsComplete) }">Show Allocation </button>       
+                </lightning:layoutItem>
+                <lightning:layoutItem padding="around-small">
+                    <button class="slds-button slds-button--brand"  style="margin-top:22px" onclick="{!c.openmodal}" disabled="{!v.ShowMarkAsComplete}">Create Allocation</button> 
+                </lightning:layoutItem>
+                 <lightning:layoutItem padding="around-small">
+                	<button class="slds-button slds-button--brand"  onclick="{!c.replaceItem}"  disabled="{!v.SaveSKUChange}" >Save Changes</button> 
+                </lightning:layoutItem>
+            </lightning:layout>           
+        </div>
+        <div class="slds-scrollable_x" style="width:100%; ">
+            <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                <thead>
+
+                    <tr class="slds-text-title_caps">
+                        <!--header checkbox for select all-->
+                         <th scope="col">
+                            <div class="slds-truncate" title="Region">Sr. No</div>
+                        </th>
+                         <th scope="col">
+                            <div class="slds-truncate" title="Region">POC ID</div>
+                        </th>
+                         <th scope="col">
+                            <div class="slds-truncate" title="Region">POC Name&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Region">Brand</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Region">Program Name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </th> 
+                        
+                        <th scope="col">
+                            <div class="slds-size_6-of-7" title="Region">Item &nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Region">SKU No &nbsp;&nbsp;&nbsp;</div>
+                            <ui:inputCheckbox aura:id="checkbox"   change="{!c.onCheck}"/>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Region">Quantity &nbsp;&nbsp;&nbsp;</div>
+                            <ui:inputCheckbox aura:id="checkboxQty"   change="{!c.onQtyCheck}"/>
+                        </th>
+                       <!-- <th scope="col">
+                            <div class="slds-truncate" title="Region">Item Price&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </th> -->
+                      <!--  <th scope="col">
+                            <div class="slds-truncate" title="Region">Item Spend&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </th> -->
+                       
+             
+                    </tr>
+                </thead>
+                <tbody> 
+                    <aura:iteration items="{!v.allData}" var="item" indexVar = "indexVarNo">                        
+                        <tr>
+                            <td >
+                                {!indexVarNo + 1}
+                            </td>
+                            <td>
+                               <lightning:input readonly="true"  value="{!item.pocId}" class="slds-size_3-of-7" /> 
+                            </td>
+                            <td>
+                               <lightning:input readonly="true"  value="{!item.accountName}" /> 
+                            </td>
+                            <td>                     
+                                <lightning:input readonly="true"  value="{!item.BrandName}" />             
+                            </td>
+                            <td>  
+                                <lightning:input readonly="true"  value="{!item.ProgramName}" />
+                            </td> 
+                            <td> 
+                                <lightning:input readonly="true"  value="{!item.itemName}"  class="slds-size_7-of-7"/>
+                            </td>  
+                            <td>
+                                <lightning:input  type="text"  class="slds-size_5-of-7" tabindex="{!indexVarNo}" onblur="{!c.enableSKUButton}" value="{!item.skuNumber}" disabled="{!v.isStateComplete}"/>                               
+                            </td>
+                            <!--<td>
+                                <lightning:buttonIcon iconName="utility:save"  size="medium" class="slds-button_icon-brand slds-button_icon"  tabindex="{!indexVarNo}"   variant="bare" alternativeText="View More" onclick="{!c.replaceItem}" />
+                            </td> -->
+                            <td>
+                                <lightning:input type="text" tabindex="{!indexVarNo}"  class="slds-size_7-of-7" label="" value="{!item.qty}"  onblur="{!c.enableSKUButton}"  disabled="{!v.isStateComplete}" />     
+                            </td>    
+                           <!-- <td>
+                               <lightning:input  readonly="true" value="{!item.itemPrice}" /> 
+                            </td> -->
+                           <!-- <td>
+                               <lightning:input  readonly="true" value="{!item.totalSpend}" /> 
+                            </td>  -->                                
+                        </tr>
+                    </aura:iteration>
+                </tbody>
+            </table>
+        </div>
+    </div>
+     <aura:if isTrue="{!v.isOpen}">
+            
+            <!--###### MODAL BOX Start######-->
+            <div class="PopUp-only" style="height: 660px;">
+ 
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open" >
+                <div class="slds-modal__container">
+                    <!-- ###### MODAL BOX HEADER Start ######-->
+                    
+                    <header class="slds-modal__header">
+                        <section>
+                        <lightning:buttonIcon iconName="utility:close"
+                                              onclick="{! c.closeModel }"
+                                              alternativeText="close"
+                                              variant="bare-inverse"
+                                              class="slds-modal__close"/>
+                        <h4 id="modal-heading-05" class="slds-text-heading_small slds-hyphenate">Create Allocation</h4>
+                        </section>
+ 					</header>
+                    <lightning:layout horizontalAlign="center" multipleRows="true" verticalAlign="end">
+                        <lightning:layoutItem size="3" padding="around-small">
+                             <lightning:input readonly="true" value="{!v.selectedBrand}" label="Brand" />
+                        </lightning:layoutItem>
+                        <lightning:layoutItem size="5" padding="around-small">
+                            <lightning:input readonly="true" value="{!v.selectedProgram}" label="Program" />
+                        </lightning:layoutItem>
+                        <lightning:layoutItem size="4" padding="around-small">
+                            <lightning:button variant="success" label="BackOffice Report " title="Go to Back Office" onclick="{! c.goToBackOffice }"/>
+                        </lightning:layoutItem>
+                        <lightning:layoutItem size="6" padding="around-small">
+                            <c:customLookup objectAPIName="account" IconName="standard:account" selectedRecord="{!v.SelectedAccountRecords}" label="Account Name" />
+                        </lightning:layoutItem>
+                        <lightning:layoutItem size="6" padding="around-small">
+                            <c:customLookup objectAPIName="Marketing_Item__c" IconName="standard:account" selectedRecord="{!v.selectedLookUpRecordSKUAllocation}" label= "SKU No" programName="{!v.selectedBrand}" onPointBrandName="{!v.selectedOnPointBrand}"/> 
+                        </lightning:layoutItem>
+                        <lightning:layoutItem size="6" padding="around-small">
+                            <lightning:input type="number" name="input1" label="Quantity" value="{!v.qty}" required= "true"/>
+                        </lightning:layoutItem>
+                        <lightning:layoutItem size="6" padding="around-small">
+                            <lightning:button name="addAllocationButt" label="Add Allocation" variant="brand" onclick="{!c.addAllocationsNew}"/>
+                        </lightning:layoutItem>
+                        <lightning:layoutItem size="12" padding="around-small">
+                            <table class="slds-table slds-table_bordered">
+                                <tr class=" slds-line-height_reset slds-hint-parent">
+                                    <td>Account</td>
+                                    <td>SKU</td>
+                                    <td>Quantity</td>
+                                </tr>
+                               
+                                <aura:iteration items="{!v.addedAllocations}"  var="thisAll" indexVar="index" >
+                                    <tr  class="slds-line-height_reset slds-hint-parent">
+                                        <td>{!thisAll.Account.Name}</td>
+                                        <td>{!thisAll.Item.Name}</td>
+                                        <td><lightning:input type="text" value="{!thisAll.Qtity}" /></td>
+                                        <td>
+                                            <a onclick="{!c.removeRow}" data-record="{!index}">
+                                                <lightning:icon iconName="utility:delete" size="small" alternativeText="Delete"/>
+                                                <span class="slds-assistive-text">Delete</span>
+                                            </a>
+                                        </td> 
+                                    </tr>
+                                </aura:iteration>                              
+                            </table>
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                    
+						
+                    <!--###### MODAL BOX FOOTER Part Start ######-->
+                    <footer class="slds-modal__footer">
+                        <lightning:button variant="neutral" 
+                                          label="Cancel"
+                                          title="Cancel"
+                                          onclick="{! c.closeModel }"/>
+                        <lightning:button variant="brand" 
+                                          label="Save"
+                                          title="Save"
+                                          onclick="{! c.saveAllocation }"/>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+            <!--###### MODAL BOX Part END Here ######-->
+            </div>
+        </aura:if>
+   
+</aura:component>

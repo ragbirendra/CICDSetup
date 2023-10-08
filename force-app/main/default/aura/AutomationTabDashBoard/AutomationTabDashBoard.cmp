@@ -1,0 +1,92 @@
+<aura:component controller="ProductBrandItemListViewApex"
+                implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction,lightning:isUrlAddressable"  
+                access="global" >
+    <aura:attribute name="isTAAdmin" type="boolean" default="false"/>
+    <aura:attribute name="isTAUser" type="boolean" default="false"/>
+     <aura:attribute name="selectedTabIdVal" type="String" />
+    <aura:handler name="init" action="{!c.doInit}" value="{!this}"/>
+   <!-- <aura:handler name="cmpEvent" event="c:DynamicTabsetValue" action="{!c.handleComponentEvent}"/>-->
+    <lightning:layout class="slds-page-header slds-page-header--object-home">
+        <lightning:layoutItem>
+            <lightning:icon iconName="standard:scan_card" alternativeText="Omni-Channel" size="large"/>
+        </lightning:layoutItem>
+        <lightning:layoutItem padding="horizontal-small">
+            <div class="page-section page-header">
+                <h1 class="slds-text-heading--label"></h1>
+                <h2 class="slds-text-heading--medium">POC PLANNING SETUP AUTOMATION</h2>
+            </div>
+        </lightning:layoutItem>
+    </lightning:layout>
+    {!v.selectedTabIdVal}
+    <lightning:tabset selectedTabId="PlanningWindow"  variant="vertical"  >
+        <!--- visible to both admin and users -->
+        
+        <aura:if isTrue="{!v.isTAAdmin}">
+            <lightning:tab label="POC Planning Windows" id="PlanningWindow">
+                <c:DefinePlanningWindows />
+            </lightning:tab>
+        </aura:if>
+        <aura:if isTrue="{!v.isTAAdmin}">
+            <!--IMP: Changes to the markup might require changes in the css file -->
+            <lightning:tab label="Brand Restrictions" id="Brandrestriction">
+                <c:UpdatePOCPlanBrandRestrictions />
+            </lightning:tab>
+        </aura:if>    
+        <aura:if isTrue="{!v.isTAAdmin || v.isTAUser}">
+            <lightning:tab label="Export Data" id="PreviewBPI">
+                <!-- <c:ABI_OP_ExportProgtamItemsByCsv />--> <c:ABI_OP_TabsetForExport isTAAdmin = "{!v.isTAAdmin}" isTAUser = "{!v.isTAUser}" />
+            </lightning:tab>
+        </aura:if>
+        <aura:if isTrue="{!v.isTAAdmin || v.isTAUser}">
+            <lightning:tab label="Program Items" id="AutomateBrandItems" class="setContentWidth">
+                <c:AutomateProgramItemCSV />
+            </lightning:tab>
+            
+            <lightning:tab label="Shopped Kits" id="ToolkitItems">
+                <c:readShoppedKitCSV />
+            </lightning:tab>
+            
+        </aura:if>
+        
+        <!-- visible to only admins-->
+        <aura:if isTrue="{!v.isTAAdmin}">
+            <lightning:tab label="Budget" id="AutomateBudget">
+                <c:UploadBudgetForPOCPlanning />
+            </lightning:tab>
+        </aura:if>
+        
+        <aura:if isTrue="{!v.isTAAdmin}">
+            <lightning:tab label="POCP Items" id="PPItemDate" >
+                <c:UpdatePOCPlanningItemData />
+            </lightning:tab>
+        </aura:if>
+        <aura:if isTrue="{!v.isTAAdmin}">
+            <lightning:tab label="POCP Program Items" id="ItemProgramAssociation" >
+                <c:UpdtPOCPlanItemProgramAssociation />
+            </lightning:tab>
+        </aura:if>
+        <aura:if isTrue="{!v.isTAAdmin}">
+            <lightning:tab label="POCP Shopped Kits" id="pocmShoppedKits" >
+                <c:UpdatePOCPlanningShoppedKitData />
+            </lightning:tab>
+        </aura:if>
+        <!--<lightning:tab label="POCP Program Shopped Kits" id="programShoppedKits" >
+                <span>Show Component Here</span>
+            </lightning:tab>-->
+        <aura:if isTrue="{!v.isTAAdmin}">
+            <lightning:tab label="POCP Approval" id="ReopenBudget" class="special" >
+                <c:POCPlanReopenBudget />
+            </lightning:tab>
+            <lightning:tab label="POCP Preview User" id="setPreviewUser">
+                <c:UpdatePOCPlanningPreviewUser />
+            </lightning:tab>
+            <lightning:tab label="Upload Brand Image" id="uploadBrandImages">
+                <c:UploadBrandImage />
+            </lightning:tab>
+            <lightning:tab label="KI Volume and Disc Budget" id="kiVolAndDisc">
+                <c:POCPKIVOLDiscUpdtComponent />
+            </lightning:tab>
+        </aura:if>
+    </lightning:tabset>
+    
+</aura:component>

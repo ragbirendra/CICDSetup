@@ -1,0 +1,12 @@
+.THIS .lightSpin::after {
+    position: absolute;
+    content: 'Please wait while we load data for you!';
+    width: 100%;
+    text-align: center;
+    top: calc(50% + 3em);
+    font-weight: bold;
+}
+
+.THIS .buttonposition {
+    float: center;
+}

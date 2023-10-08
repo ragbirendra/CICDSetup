@@ -1,0 +1,88 @@
+<aura:component controller="ProgramBrandItemController"
+                implements="flexipage:availableForAllPageTypes,force:hasRecordId,force:appHostable" access="global">
+    <aura:attribute name="data" type="List" />
+    <aura:attribute name="columns" type="List" />
+    <aura:attribute name="recordId" type="String" />
+    <aura:attribute name="allData" type="Program_Brands_Item__c" />
+    <aura:attribute name="itemrecords" type="Program_Brands_Item__c" />
+    <aura:attribute name="originalDataSet" type="List[]" default="[]" />
+    <aura:attribute name="statusList" type="List" />
+    <aura:attribute name="selectedStatus" type="string" />
+    <aura:attribute name="businessLineLst" type="List" />
+    <aura:attribute name="selectedBusinessLine" type="string" />
+    <aura:attribute name="ProgramList" type="List" />
+    <aura:attribute name="selectedProgram" type="string" />
+    <aura:attribute name="ProgramListTOshow" type="boolean" default="true" />
+    <aura:attribute name="ShowDataTOshow" type="boolean" default="true" />
+    <aura:attribute name="ShowDownload" type="boolean" default="true" />
+    <aura:attribute name="exportYearList" type="Integer[]" />
+    <aura:attribute name="selectedYr" type="String" />
+    <aura:attribute name="yearToCompare" type="String" />
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}" />
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}" />
+    <!--Modal Popup-->
+    <aura:attribute name="msgToPass" type="String[]"   />
+    <aura:attribute name="openModal" type="Boolean" default="false" /> 
+    
+    <aura:if isTrue="{!v.openModal}">
+        <c:ModalPopup msgToPass="{!v.msgToPass}" openModal="{!v.openModal}" />
+    </aura:if> 
+    <aura:attribute name="spinner" type="boolean" default="FALSE" />
+    
+    <aura:handler name="init" action="{!c.doInit}" value="{!this}" />
+    
+    <aura:if isTrue="{!v.spinner}">
+        <div aura:id="spinnerId" class="slds-spinner_container">
+            <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                <span class="slds-assistive-text">Loading...</span>
+                <div class="slds-spinner__dot-a"></div>
+                <div class="slds-spinner__dot-b"></div>
+            </div>
+        </div>
+    </aura:if>
+    
+    <div style="width: 80%">
+        <lightning:select required="true" name="YearList" label="Select Budget  Year:" value="{!v.selectedYr}" aura:id="yrSel">
+            <option value="selectyear"> ----- </option>
+            <aura:iteration items="{!v.exportYearList}" var="Yr">
+                <option text="{!Yr}" value="{!Yr}" />
+            </aura:iteration>
+        </lightning:select>
+    </div>
+    
+    <div style="width: 80%">
+        <lightning:select required="true" name="select" label="Select Program" value="{!v.selectedProgram}" aura:id="ProgramNameid">
+            <option value="None">None</option>
+            
+            <aura:iteration items="{!v.ProgramList}" var="st">
+                <option value="{!st}">{!st}</option>
+            </aura:iteration>
+        </lightning:select>
+    </div>
+    <div style="width: 80%">
+        <lightning:select name="select" required="true" label="Select Business Line" value="{!v.selectedBusinessLine}"
+                          aura:id="ProgramNameid">
+            <option value="None">None</option>
+            
+            <aura:iteration items="{!v.businessLineLst}" var="st">
+                <option value="{!st}">{!st}</option>
+            </aura:iteration>
+        </lightning:select>
+    </div>
+    
+    <div style="width: 80%">
+        <lightning:select name="select" required="true" label="Select Status" value="{!v.selectedStatus}" aura:id="StatusId" onchange="{!c.allowToShow}">
+            <option value="None">None</option>
+            
+            <aura:iteration items="{!v.statusList}" var="st">
+                <option value="{!st}">{!st}</option>
+            </aura:iteration>
+        </lightning:select>
+    </div>
+    <br></br>
+    
+    <button class="slds-button slds-button--brand" onclick="{!c.ExportItem}" disabled="{!v.ShowDataTOshow}">Download
+        As CSV</button> <br /><br />
+    
+    
+</aura:component>

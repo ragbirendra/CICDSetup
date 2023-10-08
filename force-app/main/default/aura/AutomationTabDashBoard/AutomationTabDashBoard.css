@@ -1,0 +1,40 @@
+.THIS #ReopenBudget__item{
+    background-color: #DAF7A6;
+}
+
+.THIS #programShoppedKits__item{
+    background-color: #DAF7A6;
+}
+
+.THIS #pocmShoppedKits__item{
+    background-color: #DAF7A6;
+}
+
+.THIS #ItemProgramAssociation__item{
+    background-color: #DAF7A6;
+}
+
+.THIS #PPItemDate__item{
+    background-color: #DAF7A6;
+}
+
+.THIS #setPreviewUser__item{
+    background-color: #DAF7A6;
+}
+
+.THIS #uploadBrandImages__item{
+    background-color: #DAF7A6;
+}
+
+.THIS #kiVolAndDisc__item{
+    background-color: #DAF7A6;
+}
+
+.THIS .slds-is-active a {
+    background-color: #fff !important;
+}
+
+.THIS .slds-show {
+    width: 80%;
+    overflow-x: auto;
+}

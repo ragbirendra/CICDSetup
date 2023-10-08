@@ -1,0 +1,867 @@
+<apex:page controller="POCPlanningApp" showHeader="false" sidebar="false">
+    <script>
+    
+     POCPlanningApp.getFleixblePlanningWindowforDiscretionary(function(result1, event){
+        console.log('getFleixblePlanningWindowforDiscretionaryOOHdash',result1);
+            POCPlanningApp.InitiateApp(parent.UrlParameters.TerritoryId, function(result, event){
+			console.log('InitiateAppintradeactidash',result);
+			console.log('InitiateAppintradeacti1111dash',result.SelectedYear.Territory.Approval_Status__c);
+			console.log('plan',result.Plan);
+			plan = result.Plan;
+            budgetYear = result.SelectedYear.Territory.Budget_Year__c;
+                console.log('budgetYeardash',budgetYear);
+			approvalStatus = result.SelectedYear.Territory.Approval_Status__c;
+			if(result.isBackOfficeUser){
+				approvalStatus='Back Office'; 
+			}
+			console.log('ApprovalStatusdash ',approvalStatus);
+		}),
+        planningDateListDiscretionary = result1;
+         //console.log('planningDateListDiscretionarydashooh',planningDateListDiscretionary);
+    });
+    
+    POCPlanningApp.getFleixblePlanningWindowforDiscretionaryIH(function(result2, event){
+        console.log('getFleixblePlanningWindowforDiscretionaryIHDash',result2);
+            POCPlanningApp.InitiateApp(parent.UrlParameters.TerritoryId, function(result, event){
+			console.log('InitiateAppintradeactidash',result);
+			console.log('InitiateAppintradeacti1111dash',result.SelectedYear.Territory.Approval_Status__c);
+			console.log('plan',result.Plan);
+			plan = result.Plan;
+			budgetYear = result.SelectedYear.Territory.Budget_Year__c;
+			console.log('budgetYeardash',budgetYear);
+			approvalStatus = result.SelectedYear.Territory.Approval_Status__c;
+			if(result.isBackOfficeUser){
+				approvalStatus='Back Office'; 
+			}
+			console.log('ApprovalStatusdash ',approvalStatus);
+		}),
+        planningDateListDiscretionaryIH = result2; 
+        //console.log('planningDateListDiscretionaryihdashih',planningDateListDiscretionaryIH);
+    });
+
+
+        function setupNumbers(x) {
+            // console.log('---x value --',x);
+            if (typeof x === 'undefined') {
+                return null;
+            } else {
+                if (typeof x == 'string') {
+                    x = parseFloat(x);
+                }
+                x = parseFloat(x.toFixed(2));
+                var parts = x.toString().split(".");
+                var count = 0;
+                if (parts.length == 2 && parts[1].length >= 3) {
+                    if (parseInt(parts[1][2]) >= 5) {
+                        count++;
+                    }
+                    parts[1] = parseInt(parts[1].substr(0,2)) + count;
+                }
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                return parts.join(".");
+            }
+        }
+
+        function UrlParametersConst(){
+            var self = this;
+            self.Plan;
+            self.Page;
+            self.TerritoryId;
+            self.Year;
+            self.POCId;
+        }
+
+        getParameters = function(){
+            var UrlParameters = new UrlParametersConst();
+            var query = window.location.search.substring(1);
+            console.log('--query---',query);
+            var vars;
+            if(query.indexOf("&") != -1){
+                vars =  query.split("&");
+            } else {
+                vars = [query];
+            }
+            for(var i = 0; i<vars.length; i++){
+                var pair = vars[i].split("=");
+                if(pair[0] == "Page"){
+                    UrlParameters.Page = pair[1];
+                } else if(pair[0] == "TerritoryId"){
+                    UrlParameters.TerritoryId = pair[1];
+                    console.log('===URL Parameter===',UrlParameters.TerritoryId);    
+                } else if(pair[0] == "Year"){
+                    UrlParameters.Year = pair[1];
+                } else if(pair[0] == "POCId"){
+                    UrlParameters.POCId = pair[1];
+                } else if(pair[0] == "Plan"){
+                    UrlParameters.Plan = pair[1];
+                }
+            }
+           
+            if(UrlParameters.Page == null){
+                UrlParameters.Page = "Dashboard";
+            }
+
+            if(typeof UrlParameters.TerritoryId == "undefined"){
+                UrlParameters.TerritoryId = null;
+            }
+
+            if(typeof UrlParameters.Plan == "undefined"){
+                UrlParameters.Plan = '{!$Label.Out_of_Home}';
+            } else {
+                UrlParameters.Plan = UrlParameters.Plan.replace(/\+|%20/g, " ");
+            }
+
+            if(UrlParameters.Year == null) {
+                UrlParameters.Year = 0;
+            }
+            
+            return UrlParameters;
+        }
+
+        sortFunction = function(a, b, param, orderBy){
+            if(a[param]() == b[param]()) {
+                return 0;
+            } else if((a[param]() < b[param]()) && (orderBy == "asc")){
+                return -1;
+            } else if((a[param]() > b[param]()) && (orderBy == "desc")){
+                return -1;
+            } else {
+                return 1;
+            }
+        }
+
+        function inputValueIntoLabel(value, label) {
+            return label.replace("{{VALUEONE}}", value);
+        }
+
+        Page = function(){
+            return UrlParameters.Page;
+        }
+
+       
+        
+        var reloadDashboardAfterVariable = "reloadDashboardAfterVariable";
+
+        window.onload = function() {
+            //console.log('loading windows======');
+            var self = this;
+
+            self.initialLoad = true;
+            self.initialYearSet = true;
+            self.disableAppInput =  ko.observable();
+            ///to enable or disable planning date check 
+            self.planningDateCheck = ko.computed(function(){
+                var MyDate = new Date().getTime();
+                console.log('planningDateListDiscretionaryDash',planningDateListDiscretionary);
+                console.log('planningDateListDiscretionaryIHDash',planningDateListDiscretionaryIH);
+                console.log('MyDate',MyDate);
+                console.log('planinmethoddash',plan);
+                // console.log('planningDateListDiscretionary', planningDateListDiscretionary[0].Budget_Year__c);
+                
+                if(planningDateListDiscretionary.length >0 ){
+                    if((plan == '{!$Label.Out_of_Home}'||plan == '{!$Label.In_Home_IH}') && planningDateListDiscretionary[0].Budget_Year__c == budgetYear){
+                        if (approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}' ){
+                            return true;
+                        }else{
+                            if(planningDateListDiscretionary[0].Plan_Start_Date__c < MyDate && planningDateListDiscretionary[0].Plan_End_Date__c > MyDate ){
+                               console.log('return false1');
+                                return false;
+                            }else{
+                                console.log('return true1');
+								return true; 
+                            }
+                        }
+                    }
+                }else{
+                    //  alert(' no open windows found for Discretionary. Only one open planning window is allowed.');
+                    return true;
+                }
+                
+                if(planningDateListDiscretionaryIH.length > 0 ){
+                    if(plan == 'In Home IH' && planningDateListDiscretionaryIH[0].Budget_Year__c == budgetYear){
+                        if (approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}' ){
+                            return true;
+                        }else{
+                            if(planningDateListDiscretionary[0].Plan_Start_Date__c < MyDate && planningDateListDiscretionary[0].Plan_End_Date__c > MyDate ){
+                                return false;
+                            }else{
+                                return true; 
+                            }
+                        }//closing else
+                    }//closing 2nd if
+                }else{
+                    // alert('Multiple no no open windows found for Discretionary. Only one open planning window is allowed.');
+                    return true;
+                }   
+            }); 
+
+            self.disableAppInputCheck = function(){
+
+                if(typeof self.POCHeader == "undefined" || typeof self.POCHeader.Territory == "undefined"){
+                    self.disableAppInput(true);
+                } else if(self.POCHeader.Territory.ApprovalStatus() =='Approved' ||
+                    self.POCHeader.Territory.ApprovalStatus() == 'Submitted for Approval'){
+                    self.disableAppInput(true);
+                } else if(typeof self.POCHeader.TerritoryOwner.Id() != "undefined" && self.ThisUser.Id() != self.POCHeader.TerritoryOwner.Id()){
+                    
+                    /*added by Ragbirendra */
+                    if(self.ThisUser.ManagerId() == self.ThisUser.Id()) // enable shopping window for Manager
+                        {
+                            self.disableAppInput(false);
+                        }
+                    else
+                        {
+                            self.disableAppInput(true);
+                        }
+                } else {
+                    self.disableAppInput(false);
+                }
+            }
+
+            self.UrlParameters = getParameters();
+            self.BudgetYearOptions;
+            self.POCList = ko.observableArray();
+            self.POCListIndex;
+            self.POCListIndexObservable = ko.observable();
+            self.FilterCriteria;
+
+            self.KitThreshold;
+            self.ThisUser;
+            self.SalesTerritory;
+            self.DistrictId;
+            self.Region;
+            self.RegionID;
+
+            //Kicks off Loading of the On Plan App
+            self.POCHeader = new POCHeaderVM(self);
+
+            self.cleanValue = function(Value){
+                Value = parseFloat(Value);
+
+                if(typeof Value == "undefined" || isNaN(Value) || Value == null || Value == ""){
+                    return 0;
+                } else {
+                    return parseFloat(Math.round(Value*100)/100);
+                }
+            }
+
+            self.cleanDate = function(Value){
+                if(typeof Value != "undefined"){
+                    var ValueSplit = Value.split("-")
+                    var TempDate = new Date(parseInt(ValueSplit[0]), parseInt(ValueSplit[1])-1, parseInt(ValueSplit[2]));
+                    return TempDate;
+                } else {
+                    return undefined;
+                }
+            }
+
+            self.cleanBool = function(Value){
+                if(typeof Value != "undefined"){
+                    return Value;
+                } else {
+                    return false;
+                }
+            }
+
+            self.htmlEnDeCode = (function() {
+                var charToEntityRegex,
+                    entityToCharRegex,
+                    charToEntity,
+                    entityToChar;
+
+                function resetCharacterEntities() {
+                    charToEntity = {};
+                    entityToChar = {};
+                    // add the default set
+                    addCharacterEntities({
+                        '&amp;'     :   '&',
+                        '&gt;'      :   '>',
+                        '&lt;'      :   '<',
+                        '&quot;'    :   '"',
+                        '&#39;'     :   "'"
+                    });
+                }
+
+                function addCharacterEntities(newEntities) {
+                    var charKeys = [],
+                        entityKeys = [],
+                        key, echar;
+                    for (key in newEntities) {
+                        echar = newEntities[key];
+                        entityToChar[key] = echar;
+                        charToEntity[echar] = key;
+                        charKeys.push(echar);
+                        entityKeys.push(key);
+                    }
+                    charToEntityRegex = new RegExp('(' + charKeys.join('|') + ')', 'g');
+                    entityToCharRegex = new RegExp('(' + entityKeys.join('|') + '|&#[0-9]{1,5};' + ')', 'g');
+                }
+
+                function htmlEncode(value){
+                    var htmlEncodeReplaceFn = function(match, capture) {
+                        return charToEntity[capture];
+                    };
+
+                    return (!value) ? value : String(value).replace(charToEntityRegex, htmlEncodeReplaceFn);
+                }
+
+                function htmlDecode(value) {
+                    var decoded = value.replace(/amp;/g, '');
+                    var htmlDecodeReplaceFn = function(match, capture) {
+                        return (capture in entityToChar) ? entityToChar[capture] : String.fromCharCode(parseInt(capture.substr(2), 10));
+                    };
+
+                    return (!decoded) ? decoded : String(decoded).replace(entityToCharRegex, htmlDecodeReplaceFn);
+                }
+
+                resetCharacterEntities();
+
+                return {
+                    htmlEncode: htmlEncode,
+                    htmlDecode: htmlDecode
+                };
+            })();
+
+            self.budgetStatus = function(allocation,spend){
+                if(allocation > spend){
+                    return 'underBudget';
+                } else if (allocation == spend){
+                    return 'onBudget';
+                } else if(allocation < spend){
+                    return 'overage';
+                }
+            }
+
+            self.loadAppPage = function(){
+                
+                if (self.UrlParameters.Page == 'Dashboard') {
+                    
+                  var reloadCookie = getCookie(reloadDashboardAfterVariable);
+                  //due to a bug the easiest path to resolve issue is to reload the dashboard after user goes to in home POC Variable page
+                    if(reloadCookie === "true"){
+                    //unset cookie, then reload page
+                    self.unsetReloadCookie();
+                    location.reload();
+                    return;
+                  }
+                    
+                    $("#POCPlanningPOCNavigationWrapper").css("display", "none");
+                    $("#POCPlanningIHPOCNavigationWrapper").css("display", "none");
+                    
+                    if(self.UrlParameters.Plan == '{!$Label.Out_Of_Home}' || self.UrlParameters.Plan == '{!$Label.In_Home_IH}'){
+                        if(typeof self.OOHPOCPlanningDashboard == "undefined"){
+                            self.OOHPOCPlanningDashboard = new POCPlanningDashboardVM(self);
+                            self.POCPlanningDashboard = self.OOHPOCPlanningDashboard;
+                        }
+                        else {
+                            self.POCPlanningDashboard = self.OOHPOCPlanningDashboard;
+                            self.POCPlanningDashboard.loadTerritoryPOCList(self.UrlParameters.TerritoryId);
+                        }
+                    }
+                    else if(self.UrlParameters.Plan == '{!$Label.In_Home}'){
+                     
+                        if(typeof self.IHPOCPlanningDashboard == "undefined"){
+                            self.IHPOCPlanningDashboard = new POCPlanningDashboardIHVM(self);
+                            self.POCPlanningDashboard = self.IHPOCPlanningDashboard;
+                        }
+                        else {
+                            self.POCPlanningDashboard = self.IHPOCPlanningDashboard;
+                            self.POCPlanningDashboard.loadTerritoryPOCList(self.UrlParameters.TerritoryId);
+                        }
+                    }
+                } else {
+                    
+                    $("#POCPlanningDashboardId").css("display", "none");
+                    $("#POCPlanningDashboardIHId").css("display", "none");
+                    
+                    if(self.UrlParameters.Plan == '{!$Label.Out_Of_Home}'|| self.UrlParameters.Plan == '{!$Label.In_Home_IH}') {
+                        self.OOHPOCPlanningPOCNavigation = new POCNavigationVM(self);
+                        self.POCPlanningPOCNavigation = self.OOHPOCPlanningPOCNavigation;
+                    }
+                    else if(self.UrlParameters.Plan == '{!$Label.In_Home}'){
+                        if(typeof self.IHPOCPlanningDashboard == "undefined"){
+                            self.IHPOCPlanningDashboard = new POCPlanningDashboardIHVM(self);
+                            self.POCPlanningDashboard = self.IHPOCPlanningDashboard;
+                        } else{
+                            self.loadIHPOCNav();
+                        }
+                    }
+                }
+            }
+
+            self.loadIHPOCNav = function(){
+                self.IHPOCPlanningPOCNavigation = new IHPOCNavigationVM(self);
+                self.POCPlanningPOCNavigation = self.IHPOCPlanningPOCNavigation;
+            }
+
+            self.loadBudgetSummary = function(){
+                //If loadBudget has not been called before
+                console.log('in a load budget calling');
+                if(!ko.dataFor(document.getElementById("POCBudgetSummary"))){
+                    if(self.UrlParameters.Plan == '{!$Label.Out_Of_Home}') {
+                        console.log('in a POCBudgetSummaryVM calling1');
+                        self.POCBudgetSummary = new POCBudgetSummaryVM(self);
+                    } 
+                    else if(self.UrlParameters.Plan == '{!$Label.In_Home_IH}'){
+                        console.log('in a POCBudgetSummaryNIHVM calling2');
+                        self.POCBudgetSummary = new POCBudgetSummaryNIHVM(self);
+                    }
+                    else{
+                        console.log('in a POCBudgetSummaryIHVM calling3');
+                        self.POCBudgetSummary = new POCBudgetSummaryIHVM(self);
+                    }
+                } else {
+                    if(self.UrlParameters.Plan == '{!$Label.Out_Of_Home}') {
+                        console.log('in a POCBudgetSummaryVM calling4');
+                        self.POCBudgetSummary = new POCBudgetSummaryVM(self);
+                    } 
+                    else if(self.UrlParameters.Plan == '{!$Label.In_Home_IH}') {
+                        console.log('in a POCBudgetSummaryNIHVM calling5');
+                        self.POCBudgetSummary = new POCBudgetSummaryNIHVM(self);
+                    }
+                    else{
+                        console.log('in a POCBudgetSummaryIHVM calling6');
+                        self.POCBudgetSummary = new POCBudgetSummaryIHVM(self);
+                    }
+                }
+            }
+
+            self.ApplyHeaderBinding = function(){
+                if(!ko.dataFor(document.getElementById("POCHeaderId"))){
+                    ko.applyBindings(self.POCHeader, document.getElementById("POCHeaderId"));
+                }
+                //now run it for both IH ,OOH,NIH
+                self.loadBudgetSummary();
+               
+            }
+
+            self.ApplyBudgetSummaryBinding = function(){
+                console.log('---in ApplyBudgetSummaryBinding ---');
+                $("#POCBudgetSummary").css("display", "none");
+                $("#POCBudgetSummaryIH").css("display", "none");
+                $("#POCBudgetSummaryNIH").css("display", "none");
+
+                // Activates knockout.js
+                if(self.UrlParameters.Plan == '{!$Label.Out_Of_Home}') {
+                    console.log('---if label is out of home---');
+                    console.log('------ko.dataFor(document.getElementById("POCBudgetSummary"))---------',ko.dataFor(document.getElementById("POCBudgetSummary")));
+                    if(!ko.dataFor(document.getElementById("POCBudgetSummary"))){  
+                        self.initialLoad = true;
+                        ko.applyBindings(self.POCBudgetSummary, document.getElementById("POCBudgetSummary"));  
+                        console.log('------ko.dataFor(document.getElementById("POCBudgetSummary"))-----In a if----',ko.dataFor(document.getElementById("POCBudgetSummary")));
+                    }
+                    
+                    /* else{
+                         var element = $('#POCBudgetSummary'); 
+                        ko.cleanNode(element);
+                         ko.applyBindings(self.POCBudgetSummary, document.getElementById("POCBudgetSummary")); 
+                      }*/
+                      
+                    //$("#POCBudgetSummary").css("display", "block");
+                     $("#POCBudgetSummary").css("display", "block");
+                    
+                } 
+                else if(self.UrlParameters.Plan == '{!$Label.In_Home_IH}'){
+                    console.log('---if label is in  home---');
+                    if(!ko.dataFor(document.getElementById("POCBudgetSummaryNIH"))){
+                        self.initialLoad = true;
+                        ko.applyBindings(self.POCBudgetSummary, document.getElementById("POCBudgetSummaryNIH"));
+                    }
+                    $("#POCBudgetSummaryNIH").css("display", "block");
+                    // $("#POCBudgetSummary").css("display", "block");
+                } 
+                else {
+                     console.log('---if label is new in  home---');
+                    if(!ko.dataFor(document.getElementById("POCBudgetSummaryIH"))){
+                        self.initialLoad = true;
+                        ko.applyBindings(self.POCBudgetSummary, document.getElementById("POCBudgetSummaryIH"));
+                    }
+                    $("#POCBudgetSummaryIH").css("display", "block");
+                    // $("#POCBudgetSummary").css("display", "block");
+                }
+                self.loadAppPage();
+                self.POCBudgetSummary.measureHeaderBars();
+                self.initialLoad = false;
+            }
+
+            self.ApplyDashboardBinding = function(){
+                var isOOH;
+                self.POCHeader.Plan() == '{!$Label.In_Home}' ? isOOH = false : isOOH = true;
+                var dashboardID = isOOH ? 'POCPlanningDashboardId' : 'POCPlanningDashboardIHId';
+                if(self.UrlParameters.Page == "Dashboard"){
+                    if(!ko.dataFor(document.getElementById(dashboardID))){
+                        ko.applyBindings(self.POCPlanningDashboard, document.getElementById(dashboardID));
+                    }
+                    $('#'+dashboardID).css("display", "block");
+                } else if (!isOOH) {
+                    $("#POCPlanningDashboardId").css("display", "none");
+                    $("#POCPlanningDashboardIHId").css("display", "none");
+                    self.POCPlanningPOCNavigation = new IHPOCNavigationVM(self);
+                }
+            }
+
+            self.ApplyPOCNavigationBinding = function(){
+                if(self.POCHeader.Plan() != '{!$Label.In_Home}') {
+                    var id = 'POCPlanningPOCNavigation';
+                    var wrapper = '#POCPlanningPOCNavigationWrapper';
+                } else {
+                    var id = 'POCPlanningIHPOCNavigation';
+                    var wrapper = '#POCPlanningIHPOCNavigationWrapper';
+                }
+                if(!ko.dataFor(document.getElementById(id))){
+                    ko.applyBindings(self.POCPlanningPOCNavigation, document.getElementById(id));
+                }
+                $(wrapper).css("display", "block");
+                self.loadShoppingPage();
+            }
+
+            //Load Appropriate Shopping Page
+            self.loadShoppingPage = function(){
+                switch(UrlParameters.Page) {
+                    case 'TradeActivation':
+                        if(typeof self.POCPlanningTradeActivation == "undefined"){
+                            self.POCPlanningTradeActivation = new POCTradeActivationVM(self);
+
+                        } else {
+                            var State;
+                            if(typeof self.POCPlanningPOCNavigation.POCBudget != "undefined"){
+                                State = self.POCPlanningPOCNavigation.POCBudget.State();
+                            }
+                            //If navigating from nav buttons
+                            else if(typeof self.POCList()[parent.POCListIndex] != "undefined"){
+                                State = self.POCList()[parent.POCListIndex].State();
+                            }
+                            self.POCPlanningTradeActivation.loadTradeActivation(self.UrlParameters.POCId, State);
+                        }
+                        hideOtherPages();
+                        break;
+                    case 'Driver':
+                        if(typeof self.POCPlanningDriver == "undefined") {
+                            self.POCPlanningDriver = new POCDriverVM(self);
+                        } else {
+                            self.POCPlanningDriver.fetchDriverData(self.UrlParameters.POCId);
+                        }
+                        hideOtherPages();
+                        break;
+                    case 'Discretionary':
+                        if (typeof self.POCPlanningDiscretionary == 'undefined') {
+                            self.POCPlanningDiscretionary = new POCDiscretionaryVM(self);
+                        } else {
+                            self.POCPlanningDiscretionary.fetchDiscretionaryData(self.UrlParameters.POCId);
+                        }
+                        hideOtherPages();
+                        break;
+                    case 'InStoreDriver':
+                        var budgetObject = self.getTierBudget('InStoreDriver');
+                        if(typeof self.POCPlanningInStoreDriver == "undefined"){
+                            self.POCPlanningInStoreDriver = new POCPlanningDriverIHVM(self, 'InStoreDriver', budgetObject);
+                        } else {
+                            self.POCPlanningInStoreDriver.getIHDriverItems(budgetObject);
+                        }
+                        hideOtherPages();
+                        break;
+                    case 'TrafficDrivers':
+                        var budgetObject = self.getTierBudget('TrafficDrivers');
+                        if(typeof self.POCPlanningTrafficDrivers == "undefined"){
+                            self.POCPlanningTrafficDrivers = new POCPlanningDriverIHVM(self, 'TrafficDrivers', budgetObject);
+                        } else {
+                            self.POCPlanningTrafficDrivers.getIHDriverItems(budgetObject);
+                        }
+                        hideOtherPages();
+                        break;
+                    case 'Programming':
+                        if (typeof self.POCPlanningProgramming == 'undefined') {
+                            self.POCPlanningProgramming = new POCIHProgrammingVM(self);
+                        } else {
+                            self.POCPlanningProgramming.loadIHProgramming();
+                        }
+                        hideOtherPages();
+                        break;
+                    case 'Cooler':
+                        var budgetObject = self.getTierBudget('Cooler');
+                        if(typeof self.POCPlanningCooler == "undefined"){
+                            self.POCPlanningCooler = new POCPlanningDriverIHVM(self, 'Cooler', budgetObject);
+                        } else {
+                            self.POCPlanningCooler.getIHDriverItems();
+                        }
+                        hideOtherPages();
+                        break;
+                    case 'Variable':
+                      self.setReloadCookie();
+                        if (typeof self.POCPlanningVariable == 'undefined') {
+                            self.POCPlanningVariable = new POCVariableVM(self, 'Variable');
+                        } else {
+                            self.POCPlanningVariable.setupVariableData();
+                        }
+                        hideOtherPages();
+                        break;
+                }
+            }
+
+            self.getTierBudget = function(name) {
+                var getAllTiers = self.POCPlanningDashboard.TierBudgets();
+                var budgetObject = {hasMin: false, hasMax: false};
+                for (var i = 0; i < getAllTiers.length; i++) {
+                    var TierBudgets = getAllTiers[i];
+                    if (self.POCList()[self.POCListIndex].SelectedTier() == TierBudgets.Tier__c) {
+                        if (name == 'InStoreDriver' || name == 'TrafficDrivers') {
+                            budgetObject.hasMin = true;
+                        }
+                        if (name == 'InStoreDriver') {
+                            //budgetObject.minLimit = TierBudgets.In_Store_Driver_Minimum__c || 0;
+                            budgetObject.minLimit = self.tierInStoreMinimumSpend || 0;
+                        } else if (name == 'TrafficDrivers') {
+                            //budgetObject.minLimit = TierBudgets.Traffic_Driver_Minimum__c || 0;
+                            budgetObject.minLimit = self.tierTrafficMinimumSpend || 0;
+                        } else if (name == 'Programming') {
+                            budgetObject.maxLimit = TierBudgets.Programming_Maximum__c || 0;
+                            budgetObject.hasMax = true;
+                        }
+                        return budgetObject;
+                        exit;
+                    }
+                }
+                return budgetObject;
+            }
+
+            /*  self.loadDialog = function(Title, Body){
+                if(typeof self.POCPlanningDialog == 'undefined') {
+                    self.POCPlanningDialog = new POCDialogVM(self, Title, Body);
+                    ko.applyBindings(self.POCPlanningDialog, document.getElementById("POCPlanningDialogId"));
+                } else {
+                    self.POCPlanningDialog.Title(Title);
+                    self.POCPlanningDialog.Body(Body);
+                }
+            }
+*/
+            self.loadPDFDialog = function(Title, Body, FileLink){
+                if(typeof self.POCPlanningPDFDialog == 'undefined') {
+                    self.POCPlanningPDFDialog = new POCPDFDialogVM(self, Title, Body, FileLink);
+                    ko.applyBindings(self.POCPlanningPDFDialog, document.getElementById("POCPlanningPDFDialogId"));
+                } else {
+                    self.POCPlanningPDFDialog.Title(Title);
+                    self.POCPlanningPDFDialog.Body(Body);
+                    self.POCPlanningPDFDialog.FileLink(FileLink);
+                }
+            } 
+
+            self.ApplyIHPOCDriverBinding = function(type) {
+                if (!ko.dataFor($('[id*="'+type+'"] #driverIH')[0])) {
+                    ko.applyBindings(self['POCPlanning'+type], $('[id*="'+type+'"] #driverIH')[0]);
+                }
+                $('[id*="'+type+'"] .driverIH').css("display", "block");
+            }
+
+            self.ApplyPOCTradeActivationBinding = function(){
+                if(!ko.dataFor(document.getElementById("POCPlanningTradeActivationId"))){
+                    ko.applyBindings(self.POCPlanningTradeActivation, document.getElementById("POCPlanningTradeActivationId"));
+                }
+                $("#POCPlanningTradeActivationId").css("display", "block");
+            }
+
+            self.ApplyPOCDriverBinding = function(){
+                if(!ko.dataFor(document.getElementById("POCPlanningDriverId"))){
+                    ko.applyBindings(self.POCPlanningDriver, document.getElementById("POCPlanningDriverId"));
+                }
+                $("#POCPlanningDriverId").css("display", "block");
+            }
+
+            self.ApplyPOCDiscretionaryBinding = function(){
+                if(!ko.dataFor(document.getElementById("POCPlanningDiscretionaryId"))){
+                    ko.applyBindings(self.POCPlanningDiscretionary, document.getElementById("POCPlanningDiscretionaryId"));
+                }
+                $("#POCPlanningDiscretionaryId").css("display", "block");
+            }
+
+            self.ApplyPOCVariableBinding = function(){
+                if(!ko.dataFor(document.getElementById("POCPlanningVariableId"))){
+                    ko.applyBindings(self.POCPlanningVariable, document.getElementById("POCPlanningVariableId"));
+                }
+                $("#POCPlanningVariableId").css("display", "block");
+            }
+
+            self.ApplyPOCProgrammingBinding = function(){
+                if(!ko.dataFor(document.getElementById("POCPlanningIHProgrammingID"))){
+                    ko.applyBindings(self.POCPlanningProgramming, document.getElementById("POCPlanningIHProgrammingID"));
+                }
+                $("#POCPlanningIHProgrammingID").css("display", "block");
+            }
+
+            self.msieversion = function (){
+                var ua = window.navigator.userAgent
+                var msie = ua.indexOf ( "MSIE " )
+
+                if ( msie > 0 )      // If Internet Explorer, return version number
+                {
+                    return parseInt (ua.substring (msie+5, ua.indexOf (".", msie )));
+                }
+                else                 // If another browser, return 0
+                {
+                    return 0;
+                }
+            }
+
+            self.setQueryString = function(Page, Year, TerritoryId, POCId, Plan){
+                self.UrlParameters.Page = Page;
+                self.UrlParameters.Year = Year;
+
+                if(typeof Plan == 'undefined' && typeof self.UrlParameters.Plan == 'undefined'){
+                    self.UrlParameters.Plan = '{!$Label.Out_of_Home}';
+                } else if(typeof Plan != 'undefined'){
+                    self.UrlParameters.Plan = Plan.replace('%20', ' ');
+                }
+
+                if(typeof TerritoryId != "undefined"){
+                    self.UrlParameters.TerritoryId = TerritoryId;
+                }
+                if(typeof POCId != "undefined" || POCId != null){
+                    self.UrlParameters.POCId = POCId;
+                }
+
+                if(self.msieversion() == 0 || self.msieversion()>=10)
+                {
+                    if(Page == 'Dashboard'){
+                        window.history.pushState('POCNavigation', '', '/apex/POCPlanningApp' + '?Page=' + Page + '&Plan='+ self.UrlParameters.Plan + '&Year='+ Year +'&TerritoryId=' + self.UrlParameters.TerritoryId);
+                    } else {
+                        window.history.pushState('POCNavigation', '', '/apex/POCPlanningApp' + '?Page=' + Page + '&POCId=' + self.UrlParameters.POCId + '&Plan='+ self.UrlParameters.Plan + '&Year='+ Year +'&TerritoryId=' + self.UrlParameters.TerritoryId);
+                        if(!!ko.dataFor(document.getElementById("POCPlanningPOCNavigation"))){
+                            ko.cleanNode(document.getElementById("POCPlanningPOCNavigation"));
+                        }
+                        if(!!ko.dataFor(document.getElementById("POCPlanningIHPOCNavigation"))){
+                            ko.cleanNode(document.getElementById("POCPlanningIHPOCNavigation"));
+                        }
+                    }
+                }
+            }
+
+            self.showIncompletePermissionsModal = function(incompleteRecordArray){
+              var bodyParam = "body=",
+               $modalInvalidPermissions = $("#modalInvalidPermissions");
+              var $emailLink = $modalInvalidPermissions.find("#errorMessageEmail");
+              var mailtoHref = $emailLink.attr("href");
+
+              //SET HEADER of modal
+              $modalInvalidPermissions.find(".errorMessageContent").text("Error: Salesforce has returned incomplete data.");
+
+              //SET BODY message of modal
+              $modalInvalidPermissions.find(".errorMessageHeader").text("Error: Incomplete Data Permissions");
+
+              //SET params for email link
+              var indexOfBodyParam  = mailtoHref.indexOf(bodyParam),
+                newMailtoHref       = mailtoHref.slice(0, (indexOfBodyParam + bodyParam.length) ),
+                pocRecordStr        = "";
+              for(var i = 0, limit = incompleteRecordArray.length; i < limit; i++){
+                pocRecordStr += (i < 0 ? ", " + incompleteRecordArray[i].Id : incompleteRecordArray[i].Id);
+              }
+
+              var newBody = "The user " + parent.ThisUser.Name() + " for environment " + window.location.host + " has insufficient privleges for the following POC Records - " + pocRecordStr;
+              $emailLink.attr('href', newMailtoHref + newBody);
+              //Show the modal
+              $modalInvalidPermissions.modal();
+            }
+
+            //sets cookie for reload, expires after one hour
+            self.setReloadCookie = function(){
+              var d = new Date();
+              d.setTime(d.getTime() + ((24*60*60*1000) + 3600));
+              var expires = "expires="+ d.toUTCString();
+              document.cookie = reloadDashboardAfterVariable + "=true; expires=Tue, 01 Jan 2019 00:00:00 UTC; path=/;";
+            }
+
+            //sets cookie to expire in past, gets unset
+            self.unsetReloadCookie = function(){
+              document.cookie = reloadDashboardAfterVariable + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            }
+
+            $(window).resize(function(){
+                if(self.POCHeader.Plan() != '{!$Label.In_Home}'){
+                    self.POCBudgetSummary.measureHeaderBars();
+                }
+            });
+
+
+        }
+
+        function hideOtherPages() {
+            $("#POCPlanningDriverId").css("display", "none");
+            $("#POCPlanningDiscretionaryId").css("display", "none");
+            $("#POCPlanningTradeActivationId").css("display", "none");
+            $("#POCPlanningVariableId").css("display", "none");
+            $("#POCPlanningIHProgrammingID").css('display', "none");
+            $('.driverIH').css("display", "none");
+        }
+
+        function SelectOption(Name, Value){
+            var self = this;
+            self.Name  = Name;
+            self.Value = Value;
+        }
+
+        function KitThresholdConstr(Driver, Visibility){
+            var self = this;
+            self.Driver = Driver;
+            self.Visibility = Visibility;
+        }
+        
+        function User(Id, Name, LanguageLocaleKey,ManagerId){
+            var self = this;
+            self.Id = ko.observable(Id);
+            self.Name = ko.observable(Name);
+            self.LanguageLocaleKey = ko.observable(LanguageLocaleKey);
+            console.log('====LanguageLocaleKey ===',LanguageLocaleKey );
+            self.ManagerId =ko.observable(ManagerId); // added by ragbirendra , Enable shopping window for manager
+        }
+
+        function getCookie(cname) {
+          var name = cname + "=";
+          var decodedCookie = decodeURIComponent(document.cookie);
+          var ca = decodedCookie.split(';');
+          for(var i = 0; i <ca.length; i++) {
+              var c = ca[i];
+              while (c.charAt(0) == ' ') {
+                  c = c.substring(1);
+              }
+              if (c.indexOf(name) == 0) {
+                  return c.substring(name.length, c.length);
+              }
+          }
+          return "";
+        }
+     
+    </script>
+    <style>
+        #loader-wrapper {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: #085494;
+            overflow: none;
+            z-index: 99999999999;
+        }
+
+        #loader {
+            z-index: 1001; /* anything higher than z-index: 1000 of .loader-section */
+        }
+    </style>
+    <div class="MasterStyle">
+        <div id="loader-wrapper" style="display: none">
+            <div id="loader" style="width: 100%; text-align: center;">
+                <i class="fa fa-spinner fa-spin" style="font-size:120px; color: #fff; text-align: center; margin-top: 15%;"></i>
+            </div>
+        </div>
+        <apex:include pageName="POCPlanningResources"/>
+        <apex:include pageName="POCPlanningHeader"/>
+        <apex:include pageName="POCPlanningBudgetSummary"/>
+        <apex:include pageName="POCPlanningBudgetSummaryNIH"/>
+        <apex:include pageName="POCPlanningBudgetSummaryIH"/>
+
+        <apex:include pageName="POCPlanningDashboard"/>
+        <apex:include pageName="POCPlanningDashboardIH"/>
+
+        <apex:include pageName="POCPlanningDialog"/>
+
+        <apex:include pageName="POCPlanningPOCNavigation"/>
+        <apex:include pageName="POCPlanningIHPOCNavigation"/>
+    </div>
+</apex:page>

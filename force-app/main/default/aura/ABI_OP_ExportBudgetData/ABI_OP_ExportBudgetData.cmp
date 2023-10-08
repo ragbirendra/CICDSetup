@@ -1,0 +1,68 @@
+<aura:component controller="GenericDataStampingApex" implements="flexipage:availableForAllPageTypes,lightning:actionOverride,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:appHostable" access="global">
+    <aura:attribute name="data" type="List"/>
+    <aura:attribute name="columns" type="List"/>
+    <aura:attribute name="recordId" type="String"/>
+    <aura:attribute name="allData" type="Staging_Main__c"  />
+    <aura:attribute name="originalDataSet" type="List[]" default="[]"/>
+    <aura:attribute name="brandList" type="List"/>
+    <aura:attribute name="selectedBrand" type="string"/>
+    <aura:attribute name="selectedCh" type="String" default="None"/>
+    <aura:attribute name="ProgramList" type="List"/>
+    <aura:attribute name="budgetrecords" type="BudgetLoadUI__c[]"/>
+    <aura:attribute name="selectedProgram" type="string"/>
+    <aura:attribute name="ProgramListTOshow" type="boolean" default="true"/>
+    <aura:attribute name="ShowDataTOshow" type="boolean" default="true"/> 
+    <aura:attribute name="ShowDownload" type="boolean" default="true"/>
+    <aura:attribute name="selectedYr" type="String" default="None"/>
+     <aura:attribute name="exportYearList" type="Integer[]" />
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    
+    <aura:attribute name="spinner" type="boolean" default="FALSE"/>
+    
+    <!--Modal Popup-->
+   <aura:attribute name="msgToPass" type="String[]"   />
+   <aura:attribute name="openModal" type="Boolean" default="false" /> 
+    
+    <aura:if isTrue="{!v.openModal}">
+        	<c:ModalPopup msgToPass="{!v.msgToPass}" openModal="{!v.openModal}" />
+   </aura:if>  
+    
+    <aura:handler name="init" action="{!c.doInit}" value="{!this}"/> 
+    
+    <aura:if isTrue="{!v.spinner}">
+        <div aura:id="spinnerId" class="slds-spinner_container">
+            <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                <span class="slds-assistive-text">Loading...</span>
+                <div class="slds-spinner__dot-a"></div>
+                <div class="slds-spinner__dot-b"></div>
+            </div>
+        </div>
+    </aura:if>
+    <br/>
+    <div style="width: 80%" >
+        <lightning:select name="YearList" label="Select Budget Year:" value="{!v.selectedYr}" aura:id="yrSel">
+            <option value="selectyear"> ----- </option>
+            <aura:iteration items="{!v.exportYearList}" var="Yr">
+                <option text="{!Yr}" value="{!Yr}" />
+            </aura:iteration>
+        </lightning:select> 
+    </div>
+    <div style="width: 80%" >
+        <lightning:select required="true" messageWhenValueMissing="Did you forget to select Channel?"
+                          name="ChannelList" label="Select Business Line" value="{!v.selectedCh}" aura:id="yrSel" onchange="{!c.allowToShow}">
+            <option value="channel"> ----- </option>
+            <option value="Out of Home">Out of Home</option>
+            <option value="In Home">In Home</option>
+        </lightning:select>
+    </div>       
+ <!--<button class="slds-button slds-buttonbrand" onclick="{!c.fetchData}" disabled="{!v.ShowDataTOshow}">Apply Filter</button> <br/><br/>-->
+    
+    
+    <br/>
+    <div>
+        <button class="slds-button slds-button--brand" onclick="{!c.ExportBudget}" disabled="{!v.ShowDataTOshow}">Download As CSV</button> <br/><br/>
+    </div>
+    
+    
+</aura:component>

@@ -1,0 +1,208 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction,lightning:isUrlAddressable" 
+                access="global" controller="ShoppedKitItemApprovalListView" >
+    
+    <aura:attribute name="data" type="NAZ_OP_Shopkit_Data__c[]"/>
+    <aura:attribute name="columns" type="List"/>
+    <aura:attribute name="recordId" type="String"/>
+    <aura:attribute name="allData" type="NAZ_OP_Shopkit_Data__c[]"/>
+    <aura:attribute name="shopkitRecords" type="NAZ_OP_Shopkit_Data__c[]"/>
+    <aura:attribute name="filteredProgramLst" type="NAZ_OP_Shopkit_Data__c[]"/>
+    <aura:attribute name="currentPageNumber" type="Integer" />
+    <aura:attribute name="pageSize" type="Integer" default="20"/>
+    <aura:attribute name="totalPages" type="Integer" default="0"/>
+    <aura:attribute name="pageList" type="List"/>
+    <aura:attribute name="reasonForRejection" type="String" />  
+    <aura:handler name="init" action="{!c.doInit}" value="{!this}"/>
+    <!-- attributes to check if it is a TAU user or not -->
+    <aura:attribute name="isTAUser" type="boolean" default="false"/>
+    <aura:attribute name="isTAAdmin" type="boolean" default="false"/>
+    <aura:attribute name="listViewResult" type="string[]"/>
+    <aura:attribute name="objectInfo" type="string" default="NAZ_OP_Shopkit_Data__c"/>
+    <aura:attribute name="LoggedInUserId" type="string"/>
+    <!--attributes  for lightning data table -->
+     <aura:attribute name="businessLine" type="String"/>
+    <aura:attribute name="tableColumns" type="List" />
+    <aura:attribute name="disableSumbitforApproval" type="Boolean" default='false'/>
+    <aura:attribute name="pageNumber" type="String" default="1"/>
+    <aura:attribute name="pageRecordsDisplayed" type="String" default="25"/>
+    <aura:attribute name="ProgramLst" type="String[]" />
+    <aura:attribute name="StatusLst" type="String[]" />
+    <aura:attribute name="bShowListView" type="boolean" default="false"/>
+    <aura:attribute name="showDataTable" type="boolean" default="false"/>
+    <aura:attribute name="statusOptionValue" type="String"/>
+    <aura:attribute name="selectedYr" type="String" default="None"/>
+    <aura:attribute name="exportYearList" type="Integer[]" />
+    <!--For Modal Popup-->
+    <aura:attribute name="msgToPass" type="String[]"   />
+    <aura:attribute name="openModal" type="Boolean" default="false" />
+    <aura:attribute name="approveFlag" type="Boolean" default="false" /> 
+    <aura:attribute name="rejectFlag" type="Boolean" default="false" /> 
+    <aura:attribute name="isAdmComment" type="boolean" default="false"/> 
+    <aura:if isTrue="{!v.openModal}">
+        <c:ModalPopup msgToPass="{!v.msgToPass}" openModal="{!v.openModal}" />
+    </aura:if>
+    
+    <!-- for lighting spinner-->
+    <aura:attribute name="isLoading" type="Boolean"/>
+    
+    <lightning:layout>
+        <lightning:layoutItem padding="around-small">
+             <lightning:select name="YearList" label="Select Year:" value="{!v.selectedYr}" onchange="{!c.onYearChange}" aura:id="yrSel">
+                            <option value="selectyear"> Select Year </option>
+                            <aura:iteration items="{!v.exportYearList}" var="Yr">
+                                <option text="{!Yr}" value="{!Yr}" />
+                            </aura:iteration>
+              </lightning:select>
+        </lightning:layoutItem>
+        <lightning:layoutItem padding="around-small">
+            <lightning:select name="select" label="Select Business Line" aura:id="channelNameid"
+                              onchange="{!c.onChannelChange}" value="{!v.businessLine}"> 
+                <option value="Select a Business Line">Select a Business Line</option> 
+                <option value="Out of Home">Out of Home</option>
+                <option value="In Home">In Home</option>
+              
+            </lightning:select>
+             </lightning:layoutItem>
+        
+        <lightning:layoutItem padding="around-small">
+            <lightning:select name="select" label="Select Program Name" aura:id="programNameid"  onchange="{!c.onProgramChange}" >
+                <option value="Select a Program">Select a Program</option> 
+                <!-- <option value="All">All</option>-->
+                <aura:iteration items="{!v.ProgramLst}" var="pn">
+                    <option value="{!pn}">{!pn}</option>
+                </aura:iteration>
+            </lightning:select>
+        </lightning:layoutItem>
+        <lightning:layoutItem padding="around-small">
+            <lightning:select name="select" label="Select Status" value="{!v.statusOptionValue}" aura:id="statusNameid">
+                <option value="Select a Status">Select a Status</option> 
+                <aura:if isTrue = "{!v.isTAUser}" >
+                    <aura:iteration items="{!v.StatusLst}" var="st">
+                        <option value="{!st}">{!st}</option>
+                    </aura:iteration>
+                </aura:if>
+                <aura:if isTrue = "{!v.isTAAdmin}" >
+                    <aura:iteration items="{!v.StatusLst}" var="st">
+                        <option value="{!st}">{!st}</option>
+                    </aura:iteration>
+                </aura:if>
+                
+            </lightning:select>
+        </lightning:layoutItem >
+      
+        <aura:if isTrue = "{!not(empty(v.data))}" >
+            <!-- <aura:if isTrue = "{!andor(or(and(v.isTAUser,v.statusOptionValue =='Loaded'),and(v.isTAUser,v.statusOptionValue =='Rejected')),and(v.isTAUser,v.statusOptionValue =='Failed'))}"> -->
+            
+            <aura:if isTrue = "{!and(v.isTAUser,or(v.statusOptionValue =='Loaded',v.statusOptionValue =='Rejected',v.statusOptionValue =='Failed'))}">     
+                <lightning:layoutItem alignmentBump = "left" padding="around-large">
+                    <lightning:button aura:id="SubmitforApprovalButton" variant="brand" label="Submit for Approval" title="Brand action" onclick="{!c.SubmitForApproval }"/>
+                </lightning:layoutItem>
+            </aura:if>
+            <aura:if isTrue = "{!v.statusOptionValue =='Approved'}"> 
+                <lightning:layoutItem alignmentBump = "left" padding="around-large" >
+                    <lightning:button variant="brand" aura:id="PushtoOnPlanButton" label="Push to POC Planning" title="Brand action" onclick="{!c.SubmitToOnplan }" />
+                </lightning:layoutItem>
+            </aura:if>
+            <aura:if isTrue = "{!and(v.isTAAdmin,v.statusOptionValue =='Submitted for Approval')}" > 
+                <lightning:layoutItem alignmentBump = "left" padding="around-large">
+                    <lightning:button variant="brand" disabled="{!v.approveFlag}" aura:id="ApproveButton" label="Approve" title="Brand action" onclick="{!c.Approve}" />
+                </lightning:layoutItem>
+            </aura:if>
+            <aura:if isTrue = "{!and(v.isTAAdmin,v.statusOptionValue =='Submitted for Approval')}" > 
+                <lightning:layoutItem  padding="around-large">
+                    <lightning:button variant="brand" disabled="{!v.rejectFlag}" aura:id="RejectButton" label="Reject" title="Brand action" onclick="{!c.Reject}" />
+                </lightning:layoutItem>
+            </aura:if>
+            <aura:if isTrue = "{!and(v.isTAAdmin,or(v.statusOptionValue =='Loaded',v.statusOptionValue =='Rejected',v.statusOptionValue =='Failed'))}" > 
+                <lightning:layoutItem alignmentBump = "left" padding="around-large">
+                    <lightning:button variant="brand" disabled="{!v.approveFlag}" aura:id="ApproveButton" label="Approve" title="Brand action" onclick="{!c.Approve}" />
+                </lightning:layoutItem>
+            </aura:if>
+            <aura:if isTrue = "{!and(v.isTAAdmin,or(v.statusOptionValue =='Loaded',v.statusOptionValue =='Rejected',v.statusOptionValue =='Failed'))}" > 
+                <lightning:layoutItem  padding="around-large">
+                    <lightning:button variant="brand" disabled="{!v.rejectFlag}" aura:id="RejectButton" label="Reject" title="Brand action" onclick="{!c.Reject}" />
+                </lightning:layoutItem>
+            </aura:if>
+            
+            
+        </aura:if>
+    </lightning:layout>
+    
+    <lightning:layout>
+        <lightning:layoutItem padding="around-large">
+            <lightning:button variant="brand" aura:id="ShowDataButton" label="Show Data" title="Brand action" onclick="{!c.showData}" />
+            <lightning:button variant="brand" label="Refresh" title="submit" onclick="{! c.clear}"/>
+        </lightning:layoutItem>
+    </lightning:layout>
+     <lightning:layout>      
+        <aura:if isTrue = "{!and(v.isTAAdmin,v.statusOptionValue =='Submitted for Approval')}" > 
+            <aura:if isTrue="{!v.isAdmComment}">
+            <lightning:layoutItem  alignmentBump="right" padding="around-large"> 
+                <ui:inputTextArea  class="custom-box" aura:id="adminComment"   value="" 
+                                  placeholder="Reason for rejected records..."  ></ui:inputTextArea>
+            </lightning:layoutItem> 
+            </aura:if>
+        </aura:if>
+        <br/>
+        <br/>
+        <aura:if isTrue = "{!and(v.isTAAdmin,v.statusOptionValue =='Loaded')}" > 
+            <aura:if isTrue="{!v.isAdmComment}">
+            <lightning:layoutItem  alignmentBump="right" padding="around-large"> 
+                <ui:inputTextArea  class="custom-box" aura:id="adminComment"   value="" 
+                                  placeholder="Reason for rejected records..."  ></ui:inputTextArea>
+            </lightning:layoutItem> 
+        </aura:if>
+         </aura:if>
+    </lightning:layout>
+    
+    <aura:if isTrue="{!v.showDataTable}">
+        <aura:if isTrue = "{!v.statusOptionValue =='Rejected'}"> 
+            <div class="c-container">
+                <lightning:layout >
+                    <lightning:layoutItem  size="3"  alignmentBump="right" padding="around-small"> 
+                        <label class="uiLabel-left form-element__label uiLabel">
+                            <span style="color:red; font-weight:bold;">Rejection comments is :</span>
+                        </label>
+                        
+                        <aura:iteration items="{!v.data}" var="ShopkitItem" indexVar = "indexVarNo">
+                            <aura:if isTrue="{!lessthan(indexVarNo,1)}">
+                                <div class="slds-box slds-theme_shade slds-theme_alert-texture" style="color:red; font-weight:bold;" > 
+                                    
+                                    <ui:outputTextArea  value= "{!ShopkitItem.comment}"  />  
+                                    
+                                </div>
+                            </aura:if>
+                        </aura:iteration>
+                        
+                    </lightning:layoutItem>
+                </lightning:layout>
+            </div>
+        </aura:if>
+        
+        <lightning:layout verticalAlign="end" >
+            <lightning:layoutItem>
+                
+                <!--Spinner when loading -->
+                <lightning:datatable class="pageTable"
+                                     data="{!v.data}"
+                                     columns="{!v.tableColumns}"
+                                     aura:id="ApprovalDataTable"
+                                     keyField="recordId"
+                                     hideCheckboxColumn ="true"
+                                     resizeColumnDisabled="false"
+                                     onsave ="{!c.onSave}"
+                                     onrowaction="{!c.handleRowAction}" 
+                                     showRowNumberColumn="true" />
+                
+            </lightning:layoutItem>
+        </lightning:layout >
+        
+    </aura:if>
+     <aura:if isTrue="{!v.isLoading}">
+        <lightning:spinner variant="brand"
+                           aura:id="isLoading" class="lightSpin"  size="large" alternativeText="Loading More Data..."/> 
+        
+        <p style="width: 100%;text-align: center;font-weight: bold;top: 11em;position: relative;left: 0px;width: 100vw;" > Please wait while we Load data for you! </p>
+        
+    </aura:if>
+</aura:component>

@@ -1,0 +1,369 @@
+<apex:page controller="POCPlanningApp" showHeader="false" sidebar="false">
+    <style type="text/css">
+        .POCPlanningPOCNavigationWrapper{
+            display: none;
+            width: 100%;        
+            position: relative;
+            top: 150px; 
+            clear: both;
+            z-index: 0;         
+            padding-top: 20px;
+            padding-right: 15px;
+            padding-bottom: 15px;
+            padding-left: 15px;
+        }
+
+        .POCTopLineNavigation{
+            display: table;
+            width: 100%;            
+            font-size: 16px;
+        }
+
+        .POCTopLineNavigation .POCName{
+            display: table-cell;
+            float: left;
+            width: 50%;
+            font-weight: bold;          
+        }
+
+        .POCTopLineNavigation .Navigation{
+            display: table-cell;
+            float: right;
+            text-align: right;
+            width: 50%;
+        }
+
+        .Navigation  .faNAV {
+            display: none;
+            width: 50%;
+            background-color: #666666;
+            color: #ffffff;
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            padding: 7px 9px 7px 9px;
+            cursor: pointer;
+        }
+
+        .Navigation .Spacer{
+            width: 25px;
+            height: 16px;
+            display: inline-block;
+        }
+
+        .POCSpendNavigation{
+            padding-top: 15px;
+            font-size: 13px;
+        }
+
+        .POCSpendNavigation .SpendNav{
+            display: table;
+            float: left;
+            width: 55%;
+        }
+        
+        .SpendNav {
+            border-bottom: 2px solid #5dcde4;
+        }
+
+        .POCSpendNavigation .SpendNav div{
+            display: table-cell;
+            width: 25%;
+            text-align: center;
+            padding: 15px 5px;
+            border-bottom: 6px solid #fff;
+            font-size: 120%;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .POCSpendNavigation .SpendNav div.selected {
+            border-bottom: 6px solid #5dcde4;
+            font-weight: bold;
+        }
+
+        .POCSpendNavigation .SpendNav #spendNavDiscretionary.selected:after {
+            top: 100%;
+            left: 50%;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+            border-color: rgba(93, 205, 228, 0);
+            border-top-color: #5dcde4;
+            border-width: 17px;
+            margin-left: -17px;
+        }
+
+        .POCSpendNavigation .SpendSummary{
+            display: table;
+            background-color: #ecf2f6;
+            border-radius: 5px;
+            padding: 5px 0;
+            float: right;
+            width: 40%;
+        }
+
+        .POCSpendNavigation .SpendSummary div{
+            display: table-cell;
+            width: 33.33%;
+            text-align: center;
+            padding: 5px;
+        }
+        
+        .POCSpendNavigation .SpendSummary div p {
+            font-weight: bold;
+            margin-bottom: 7px;
+        }
+
+    </style>
+
+    <script type="text/javascript">
+        function POCNavigationVM(parent){
+            var self = this;
+            self.parent = parent;
+            self.POCListIndex = parent.POCListIndex;
+            self.Page = ko.observable(parent.UrlParameters.Page);
+            self.FilterCriteria = ko.observable(parent.FilterCriteria);
+            self.PrevShow = ko.observable(false);
+            self.PrevPOCId = ko.observable();
+            self.NextShow = ko.observable(false);
+            self.NextPOCId = ko.observable();
+            self.isBackOffice=ko.observable(false);                                       // APCHanges W-013969
+            self.isBackOfficeElite=ko.observable(false)                                    // APCHanges W-013969
+
+            if(parent.POCList.length > 0){
+                self.PrevShow(parent.POCListIndex != 0 && parent.POCList.length !=1);
+                if(self.PrevShow()){
+                    if (typeof parent.POCList()[parent.POCListIndex-1] != 'undefined') {
+                        self.PrevPOCId(parent.POCList()[parent.POCListIndex-1].Id());
+                    }
+                }
+                self.NextShow(parent.POCListIndex < (parent.POCList.length-1) && parent.POCList.length !=1);
+                if(self.NextShow()){
+                    if (typeof parent.POCList()[parent.POCListIndex+1] != 'undefined') {
+                        self.NextPOCId(parent.POCList()[parent.POCListIndex+1].Id());
+                    }
+                }
+            }           
+
+            POCPlanningApp.POCBudget(parent.UrlParameters.POCId, function(result,event){
+                self.isBackOffice=result.isBackOfficeUser;           //AP Changes W-013969
+                self.isBackOfficeElite=result.isBackOfficeClubElite;     //AP Changes W-013969
+                console.log('====result----',result);
+                if(!result.isBackOfficeUser){
+                self.POCBudget = new POCBudgetConst(
+                    self, //parent, 
+                    result.POCBudget.Id,    //Id, 
+                    result.POCBudget.Account__r.Name,   //Name, 
+                    result.POCBudget.Account__r.ShippingStreet, //Street, 
+                    result.POCBudget.Account__r.ShippingCity, //City, 
+                    result.POCBudget.Account__r.ShippingState, //State, 
+                    result.POCBudget.Account__r.buzz_retail__Customer_Subtype__c, //Channel
+                    result.POCBudget.Trade_Activation_Spend__c, //TradeActivation, 
+                    result.POCBudget.Driver_Spend__c,   //Driver, 
+                    result.POCBudget.Discretionary_Spend__c,    //Discretionary,
+                    parent.cleanValue(result.POCBudget.Target_Vol_HL__c),   //TargetVol
+                    parent.cleanValue(result.POCBudget.Target_Spend_HL__c),  //TargetSpend_HL
+                    result.POCBudget.User_Paid_Spend__c                  // User Paid Spend	
+                    );
+                  }
+                  else       //AP Changes W-013969
+                  {
+                      self.POCBudget = new POCBudgetConst(
+                        self, //parent, 
+                        result.backOfficeAccList[0].Id,    //Id, 
+                        result.backOfficeAccList[0].Name,   //Name, 
+                        result.backOfficeAccList[0].ShippingStreet, //Street, 
+                        result.backOfficeAccList[0].ShippingCity, //City, 
+                        result.backOfficeAccList[0].ShippingState, //State, 
+                        result.backOfficeAccList[0].buzz_retail__Customer_Subtype__c, //Channel
+                        result.POCBudget.Trade_Activation_Spend__c,   //+result.POCBudget.Discretionary_Spend__c+result.POCBudget.Driver_Spend__c,    //result.POCBudget.Trade_Activation_Spend__c, //TradeActivation, 
+                        result.POCBudget.Driver_Spend__c,   //Driver, 
+                          result.POCBudget.Discretionary_Spend__c,    //+result.POCBudget.Discretionary_Spend__c+result.POCBudget.Driver_Spend__c,    //Discretionary, 
+                        0,   //TargetVol
+                        0,  //TargetSpend_HL
+                        result.POCBudget.User_Paid_Spend__c
+                        );           
+                  }
+                console.log('Trade Activation-->',result.POCBudget.Trade_Activation_Spend__c);
+                console.log('Discretionary Spend-->',result.POCBudget.Discretionary_Spend__c);
+                console.log('Driver  Spend-->',result.POCBudget.Driver_Spend__c);
+				console.log('all addition===', result.POCBudget.Trade_Activation_Spend__c+result.POCBudget.Discretionary_Spend__c+result.POCBudget.Driver_Spend__c);
+                for(var i = 0; i<result.POCSpendCategoryList.length; i++){
+                    if(result.POCSpendCategoryList[i].RecordType.DeveloperName == "Trade_Activation_Out_of_Home"){
+                        self.POCBudget.TradeActivationId(result.POCSpendCategoryList[i].Id);
+                    } else if(result.POCSpendCategoryList[i].RecordType.DeveloperName == "Discretionary_Out_of_Home"){
+                        self.POCBudget.DiscretionaryId(result.POCSpendCategoryList[i].Id);
+                    } else if(result.POCSpendCategoryList[i].RecordType.DeveloperName == "Driver_Out_of_Home"){
+                        self.POCBudget.DriverId(result.POCSpendCategoryList[i].Id);
+                    }
+                }
+                parent.ApplyPOCNavigationBinding();
+            });
+
+            self.Nav = function(Value){
+                if(Value == "Next"){
+                    parent.POCListIndex++;
+                    parent.UrlParameters.POCId = self.NextPOCId();
+                } else if(Value == "Prev"){
+                    parent.POCListIndex--;
+                    parent.UrlParameters.POCId = self.PrevPOCId();
+                }
+
+                parent.setQueryString(parent.UrlParameters.Page, parent.UrlParameters.Year, 
+                    parent.UrlParameters.TerritoryId, parent.UrlParameters.POCId);
+                parent.loadAppPage();
+            }
+
+            self.POCNav = function(value) {
+                parent.setQueryString(value, parent.UrlParameters.Year, 
+                parent.UrlParameters.TerritoryId, parent.UrlParameters.POCId);
+                parent.loadAppPage();
+            }
+        }
+
+        function POCBudgetConst(parent, Id, Name, Street, City, State, Channel, TradeActivation, Driver, Discretionary, TargetVol, TargetSpend_HL, UserSpend){
+            var self = this;
+            self.Id = ko.observable(Id)
+            self.Name = ko.observable(Name);
+            self.NameAddress = ko.observable(Name+": "+Street+", "+City);
+            self.State = ko.observable(State);
+            self.Channel = ko.observable(Channel);
+            self.TradeActivation = ko.observable(TradeActivation+UserSpend);
+            self.TradeActivationId = ko.observable()
+            self.Driver = ko.observable(Driver);
+            self.DriverId = ko.observable()
+            console.log('all values===',Discretionary);
+            self.Discretionary = ko.observable(Discretionary);
+            self.DiscretionaryId = ko.observable()
+            self.UserPaidSpend= ko.observable(UserSpend);
+            self.POCSpend = ko.computed(function(){
+                console.log('===trade actiation==',self.TradeActivation());
+                console.log('===Driver Driver==',self.Driver());
+                console.log('===Discretionary Discretionary==',self.Discretionary());
+                console.log('===POCSpend POCSpend==',self.UserPaidSpend());
+                console.log('==returned values=',parent.parent.cleanValue(self.TradeActivation()) + parent.parent.cleanValue(self.Driver()) + parent.parent.cleanValue(self.Discretionary()));
+                return parent.parent.cleanValue(self.TradeActivation())  + parent.parent.cleanValue(self.Discretionary()); 
+            });
+
+            self.TargetVol = ko.observable();
+            if(self.Channel() == "Local / Independent Chain"){
+                self.TargetVol(TargetVol);
+            } else {
+                self.TargetVol(0);
+            }
+
+            self.Spend_HL = ko.computed(function(){
+                return parent.parent.cleanValue(self.POCSpend())/parent.parent.cleanValue(self.TargetVol());
+            });
+
+            self.TargetSpend_HL = ko.observable(TargetSpend_HL);
+
+            self.TargetPOCSpend = ko.computed(function(){
+                return self.TargetVol() * self.TargetSpend_HL();
+            });
+        }
+        
+    </script>
+
+    <div class="modal fade" id="modalTAKitItemWarning" tabindex="-1" role="dialog" aria-labelledby="modalTAKitItemWarning">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">{!$Label.Item_Quantity_Minimum_not_met_Title}.</h4>
+            </div>
+            <div class="modal-body">
+                {!$Label.Item_Quantity_Minimum_not_met_Message}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close">{!$Label.Ok}</button>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="POCPlanningPOCNavigationWrapper" id="POCPlanningPOCNavigationWrapper">
+        <div class="POCPlanningPOCNavigation" id="POCPlanningPOCNavigation">
+            <div class="POCTopLineNavigation">
+                <div class="POCName">
+                    <span data-bind="html: POCBudget.NameAddress"/>
+                </div>
+                <div class="Navigation">
+                    <span>
+                        <span data-bind="text: FilterCriteria"/>
+                    </span>
+                    <span>
+                        <span class="faNAV" data-bind="click: Nav.bind($data, 'Prev'), style: {display: PrevShow() ? 'inline' : 'none' }">
+                            <i class="fa fa-chevron-left"/> {!$Label.Previous}
+                        </span>
+                        <span data-bind="style: {display: (PrevShow() && NextShow()) ? 'inline-block' : 'none' }" class="Spacer"/>
+                        <span class="faNAV" data-bind="click: Nav.bind($data, 'Next'), style: {display: NextShow() ? 'inline' : 'none' }">
+                            {!$Label.Next} <i class="fa fa-chevron-right"/>
+                        </span>
+                    </span>
+                </div>
+            </div>
+
+            
+            <div class="POCSpendNavigation row">
+                <div class="SpendNav col-sm-6">
+                    <div data-bind="click: POCNav.bind($data, 'TradeActivation'), css: Page() == 'TradeActivation' ? 'selected' : ''">
+                        {!$Label.Trade_Activation}
+                        $<span data-bind="text: setupNumbers(POCBudget.TradeActivation())"/>
+                    </div>
+                    <div data-bind="click: POCNav.bind($data, 'Driver'), css: Page() == 'Driver' ? 'selected' : ''">
+                       <!-- {!$Label.Driver_Rep_Paid}-->
+                          {!$Label.Driver_POCM_Forecast}
+                       <!-- $<span data-bind="text: setupNumbers(POCBudget.Driver())"/> -->
+                    </div>
+                    <div id="spendNavDiscretionary" data-bind="click: POCNav.bind($data, 'Discretionary'), css: Page() == 'Discretionary' ? 'selected' : ''">   
+                        {!$Label.Discretionary}
+                       <!-- $<span data-bind="text: setupNumbers(POCBudget.Discretionary())"/>  -->
+                    </div>
+                </div>
+                
+                <div class="SpendSummary col-sm-6">
+                    <div>                   
+                        <p>{!$Label.POC_Spend}</p>
+                        <span data-bind="css: parent.budgetStatus(POCBudget.TargetPOCSpend(), POCBudget.POCSpend())">
+                            $
+                            <span data-bind="text: setupNumbers(POCBudget.POCSpend())"/>
+                        </span>
+                        <span>
+                            | $<span data-bind="text: setupNumbers(POCBudget.TargetPOCSpend())"/>
+                        </span>
+                    </div>
+                    <div>                   
+                        <p>{!$Label.Target_Vol_HL}</p>
+                        <span data-bind="text: setupNumbers(POCBudget.TargetVol()), style: {display: POCBudget.TargetVol() != 0 ? 'inline' : 'none'}"/>
+                        <span data-bind="style: {display: (POCBudget.TargetVol() == 0 || POCBudget.TargetVol()== 'N/A')? 'inline' : 'none'}">
+                            N/A
+                        </span>
+                    </div>
+                    <div>                   
+                        <p>{!$Label.Spend_HL}</p>
+                        <span data-bind="style: {display: POCBudget.TargetVol() != 0 ? 'inline' : 'none'}">
+                            <span data-bind="css: parent.budgetStatus(POCBudget.TargetSpend_HL(), POCBudget.Spend_HL())">
+                                $<span data-bind="text: setupNumbers(POCBudget.Spend_HL())"/>
+                            </span>
+                            |
+                            <span data-bind="text: setupNumbers(POCBudget.TargetSpend_HL())"/>
+                        </span>                 
+                        <span data-bind="style: {display: POCBudget.TargetVol() == 0 ? 'inline' : 'none'}">
+                            N/A
+                        </span>
+                    </div>
+                </div>
+            </div>          
+        </div>
+        <br/>
+        <apex:include pageName="POCPlanningTradeActivation"/>
+        <apex:include pageName="POCPlanningDriver" />
+        <apex:include pagename="POCPlanningDiscretionary" />
+    </div>
+    
+</apex:page>

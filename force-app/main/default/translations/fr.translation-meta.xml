@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Translations xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customLabels>
+        <label><!-- ABI_OP_ApexSideError --></label>
+        <name>ABI_OP_ApexSideError</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_AppravalStatusApproved --></label>
+        <name>ABI_OP_AppravalStatusApproved</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ApprovalLabel --></label>
+        <name>ABI_OP_ApprovalLabel</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ApprovalStatusFailed --></label>
+        <name>ABI_OP_ApprovalStatusFailed</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ApprovedStatus --></label>
+        <name>ABI_OP_ApprovedStatus</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ApprovedStatusforPOCP --></label>
+        <name>ABI_OP_ApprovedStatusforPOCP</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_BrandNameNotNull --></label>
+        <name>ABI_OP_BrandNameNotNull</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_BudgetLoadMessage --></label>
+        <name>ABI_OP_BudgetLoadMessage</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_BusAndYear --></label>
+        <name>ABI_OP_BusAndYear</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_BusinessLine --></label>
+        <name>ABI_OP_BusinessLine</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_BusinessLineSelection --></label>
+        <name>ABI_OP_BusinessLineSelection</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_BusinessLineUniform --></label>
+        <name>ABI_OP_BusinessLineUniform</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_BusinessLineVals --></label>
+        <name>ABI_OP_BusinessLineVals</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_CompletedStatus --></label>
+        <name>ABI_OP_CompletedStatus</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_DataSaveSuccessfully --></label>
+        <name>ABI_OP_DataSaveSuccessfully</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_DataSavedLabel --></label>
+        <name>ABI_OP_DataSavedLabel</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_DiscretionaryType --></label>
+        <name>ABI_OP_DiscretionaryType</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_DriverType --></label>
+        <name>ABI_OP_DriverType</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_EndDateValidation --></label>
+        <name>ABI_OP_EndDateValidation</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_FailedStatus --></label>
+        <name>ABI_OP_FailedStatus</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_FailedToPush --></label>
+        <name>ABI_OP_FailedToPush</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_FileValidated --></label>
+        <name>ABI_OP_FileValidated</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_FillAllValue --></label>
+        <name>ABI_OP_FillAllValue</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_FullPrice --></label>
+        <name>ABI_OP_FullPrice</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_IHBusinessLine --></label>
+        <name>ABI_OP_IHBusinessLine</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_IncorrectFileFormate --></label>
+        <name>ABI_OP_IncorrectFileFormate</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_IncorrectSAPID --></label>
+        <name>ABI_OP_IncorrectSAPID</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ItemClassification --></label>
+        <name>ABI_OP_ItemClassification</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ItemClassificationVals --></label>
+        <name>ABI_OP_ItemClassificationVals</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ItemType --></label>
+        <name>ABI_OP_ItemType</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_LoadedStatus --></label>
+        <name>ABI_OP_LoadedStatus</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_MenuCategory --></label>
+        <name>ABI_OP_MenuCategory</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_NAN_SAPPriceYearQuantity --></label>
+        <name>ABI_OP_NAN_SAPPriceYearQuantity</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_NoRecordFound --></label>
+        <name>ABI_OP_NoRecordFound</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_NotNullPlanningED --></label>
+        <name>ABI_OP_NotNullPlanningED</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_NotNullPlanningSD --></label>
+        <name>ABI_OP_NotNullPlanningSD</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_NotNullPrgEndDate --></label>
+        <name>ABI_OP_NotNullPrgEndDate</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_NotNullPrgstartDate --></label>
+        <name>ABI_OP_NotNullPrgstartDate</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_OOHBusinessLine --></label>
+        <name>ABI_OP_OOHBusinessLine</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_POCP_ExcelFormatError --></label>
+        <name>ABI_OP_POCP_ExcelFormatError</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_PlanningEndDateandStartDate --></label>
+        <name>ABI_OP_PlanningEndDateandStartDate</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_PrgStartDateEndDate --></label>
+        <name>ABI_OP_PrgStartDateEndDate</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ProductCCFile --></label>
+        <name>ABI_OP_ProductCCFile</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ProductName --></label>
+        <name>ABI_OP_ProductName</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ProgramNameCannotBeNull --></label>
+        <name>ABI_OP_ProgramNameCannotBeNull</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ProgramNameStatus --></label>
+        <name>ABI_OP_ProgramNameStatus</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_PushToPOCPOnApproval --></label>
+        <name>ABI_OP_PushToPOCPOnApproval</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_Quantity --></label>
+        <name>ABI_OP_Quantity</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_RecordSavedRefresh --></label>
+        <name>ABI_OP_RecordSavedRefresh</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_RecordsRejected --></label>
+        <name>ABI_OP_RecordsRejected</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_RejectedStatus --></label>
+        <name>ABI_OP_RejectedStatus</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_RejectionComment --></label>
+        <name>ABI_OP_RejectionComment</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_SAPID --></label>
+        <name>ABI_OP_SAPID</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_SAPNumberIncorrectValidation --></label>
+        <name>ABI_OP_SAPNumberIncorrectValidation</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_SAPorTEMPValidation --></label>
+        <name>ABI_OP_SAPorTEMPValidation</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ServerError --></label>
+        <name>ABI_OP_ServerError</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ShopkitRejected --></label>
+        <name>ABI_OP_ShopkitRejected</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_StandardPrice --></label>
+        <name>ABI_OP_StandardPrice</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_StartDateGreater --></label>
+        <name>ABI_OP_StartDateGreater</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_StartDateValidation --></label>
+        <name>ABI_OP_StartDateValidation</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_SubmitForApproval --></label>
+        <name>ABI_OP_SubmitForApproval</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_TAUserOrTAAdmin --></label>
+        <name>ABI_OP_TAUserOrTAAdmin</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_TerrBudgetCharacter --></label>
+        <name>ABI_OP_TerrBudgetCharacter</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_TradeActivationType --></label>
+        <name>ABI_OP_TradeActivationType</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_URL --></label>
+        <name>ABI_OP_URL</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_URLForImage --></label>
+        <name>ABI_OP_URLForImage</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_UnderscoreinProductName --></label>
+        <name>ABI_OP_UnderscoreinProductName</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_UserPaid --></label>
+        <name>ABI_OP_UserPaid</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ValidationSuccess --></label>
+        <name>ABI_OP_ValidationSuccess</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_Year --></label>
+        <name>ABI_OP_Year</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_YearSelection --></label>
+        <name>ABI_OP_YearSelection</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI Program Item CSV Headers --></label>
+        <name>ABI_Program_Item_CSV_Headers</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ApprovalURLItemAndShoppedKitItem --></label>
+        <name>ApprovalURLItemAndShoppedKitItem</name>
+    </customLabels>
+    <customLabels>
+        <label>Approuvé</label>
+        <name>Approval_status_as_Approved</name>
+    </customLabels>
+    <customLabels>
+        <label>CAD Nou</label>
+        <name>In_Home_IH</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ABI_OP_ItemPushedSuccessfuly --></label>
+        <name>Items_Successfully_pushed_to_POCP</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- ProgramBrandItemURL --></label>
+        <name>ProgramBrandItemURL</name>
+    </customLabels>
+    <customLabels>
+        <label><!-- Stagging Record Archival Year --></label>
+        <name>Stagging_Record_Archival_Year</name>
+    </customLabels>
+    <customLabels>
+        <label>Soumis pour approbation</label>
+        <name>Submitted_for_Approval_Label</name>
+    </customLabels>
+    <customLabels>
+        <label>Variable Super Bowl</label>
+        <name>Super_Bowl_Spend</name>
+    </customLabels>
+    <reportTypes>
+        <description><!-- PLANNING REPORT KI Volume --></description>
+        <label><!-- PLANNING REPORT KI Volume --></label>
+        <name>PLANNING_REPORT_KI_Volume</name>
+        <sections>
+            <label><!-- Annual POC Budget Plans --></label>
+            <name>Annual POC Budget Plans</name>
+        </sections>
+        <sections>
+            <label><!-- Budgets --></label>
+            <name>Budgets</name>
+        </sections>
+        <sections>
+            <label><!-- Sales Territories --></label>
+            <name>Sales Territories</name>
+        </sections>
+    </reportTypes>
+    <reportTypes>
+        <description><!-- Shopped Kit Items with Toolkit and Region --></description>
+        <label><!-- Shopped Kit Items with Toolkit and Region --></label>
+        <name>Shopped_Kit_Items_with_Toolkit_and_Region</name>
+        <sections>
+            <label><!-- Annual POC Budget Plans --></label>
+            <name>Annual POC Budget Plans</name>
+        </sections>
+        <sections>
+            <label><!-- POC Spend Categories --></label>
+            <name>POC Spend Categories</name>
+        </sections>
+        <sections>
+            <label><!-- Shopped Kits --></label>
+            <name>Shopped Kits</name>
+        </sections>
+        <sections>
+            <label><!-- Trade Activation Kit Items --></label>
+            <name>Trade Activation Kit Items</name>
+        </sections>
+    </reportTypes>
+</Translations>

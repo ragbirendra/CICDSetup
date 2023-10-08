@@ -1,0 +1,224 @@
+<aura:component implements="flexipage:availableForAllPageTypes,force:appHostable" controller="SetPOCPlanningWindows">
+    <aura:attribute name="planningWindowObj" type="POC_Planning_Setup_Admin__c" 
+                    default="{ 'sobjectType': 'POC_Planning_Setup_Admin__c',
+                             'Planning_Year__c' :''}"/>
+    <aura:attribute name="selectedYear" type="String" />
+    <aura:attribute name="timezoneGMT" type="String" />
+    <aura:attribute name="yearOptions" type="String[]" />
+    <aura:attribute name="BudgetyearOptions" type="String[]" />
+    <aura:attribute name="defPlanWindows" type="List" />
+    <aura:attribute name="oldData" type="List" />
+    <aura:attribute name="allPlanWindows" type="List" />
+    <aura:attribute name="typeOptions" type="String[]" />
+    <aura:attribute name="businessLineOptions" type="String[]" />
+    <aura:attribute name="showCreatePanel" type="Boolean" default="false" />
+    <aura:attribute name="showDefinWindowCmp" type="Boolean" default="false" />
+    <aura:attribute name="showLoading" type="Boolean" default="false" />
+    <aura:attribute name="isEditOp" type="Boolean" default="false" />
+    <aura:attribute name="isEditYr" type="Boolean" default="false" />
+    <aura:attribute name="isNewYr" type="Boolean" default="false" />
+    <aura:attribute name="showDefinedWindow" type="Boolean" default="false" />
+    <aura:attribute name="showZone" type="Boolean" default="false" />
+    <aura:attribute name="msgToPass" type="String[]"   />
+    <aura:attribute name="openModal" type="Boolean" default="false" /> 
+    <aura:attribute name="planningrecords" type="List[]"/>
+    <aura:handler value="{!this}" name="init" action="{!c.doInit}" />
+    <lightning:layout horizontalAlign="left" multipleRows="true">
+        <aura:if isTrue="{!v.showLoading}">
+            <lightning:spinner variant="brand" size="medium" aura:id="lightSpin" />
+        </aura:if>
+        
+        <aura:if isTrue="{!v.openModal}">
+            <c:ModalPopup msgToPass="{!v.msgToPass}" openModal="{!v.openModal}" />
+        </aura:if>
+        
+        <lightning:layoutItem size="12">
+            <lightning:card title="Select Calender Year" footer="" class="slds-p-around_xx-small">
+                <lightning:select name="selectElem" label="Select Calender Year" aura:id="selCalenderYr" value="{!v.selectedYear}" onchange="{!c.onYearChange}" required="true" >
+                    <option text="--Please Select--" value=""></option>
+                    <aura:iteration items="{!v.yearOptions}" var="yearOpt">
+                        <option text="{!yearOpt}" value="{!yearOpt}"></option>
+                    </aura:iteration>
+                </lightning:select>                           
+            </lightning:card>
+        </lightning:layoutItem>
+        <lightning:layoutItem size="8" padding="around-small">
+            <lightning:button name="showWinBut" label="Show Planning Windows" onclick="{!c.onYearSelection}" variant="brand"/>
+            <lightning:button name="createNew" label="Create New Window" onclick="{!c.defineNewWindow}" variant="brand"/> 
+        </lightning:layoutItem>
+        
+        <aura:if isTrue="{!v.showDefinWindowCmp}">
+            <lightning:layoutItem size="12" >
+                <lightning:card title="Defined Planning Windows" footer="" >
+                    <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                        <thead>
+                            <tr >
+                                <td>Calender Year</td>
+                                <td>Budget Year</td>
+                                <td>Business Line </td>
+                                <td>Type</td>
+                                <td>Planning Start Date</td>
+                                <td>Planning End Date</td>
+                                <td>Action</td>
+                            </tr>  
+                        </thead> 
+                        <tbody>                
+                            <aura:iteration items="{!v.defPlanWindows}" var="thisWindow">
+                                <tr class="slds-line-height_reset">
+                                    <td>{!thisWindow.Planning_Year__c}</td>
+                                    <td>{!thisWindow.Budget_Year__c}</td>
+                                    <td>{!thisWindow.Business_Line__c}</td>
+                                    <td class="slds-cell-wrap">{!thisWindow.Type__c}</td>
+                                    <td><lightning:formattedDateTime value="{!thisWindow.Plan_Start_Date__c}" year="numeric" month="numeric" day="numeric" hour="2-digit"
+                                                                     minute="2-digit" timeZoneName="short" hour12="true"/></td>
+                                    <td><lightning:formattedDateTime value="{!thisWindow.Plan_End_Date__c}" year="numeric" month="numeric" day="numeric" hour="2-digit"
+                                                                     minute="2-digit" timeZoneName="short" hour12="true"/></td>
+                                    <td><div class="scrollabley">
+                                        <a onclick="{!c.updtPlanningWindowRec}" data-recId="{!thisWindow.Id}" aura:id="editClick" >
+                                            <!--<span>EDIT</span>class="slds-button slds-button_brand"-->
+                                            <lightning:icon iconName="action:edit" size="small" />
+                                        </a>
+                                        &nbsp; | &nbsp;
+                                        <a onclick="{!c.delPlanWindowData}" data-recId="{!thisWindow.Id}" >
+                                            <!--<span>DELETE</span>class="slds-button slds-button_destructive"-->
+                                            <lightning:icon iconName="action:delete" size="small" />
+                                        </a></div>
+                                    </td>
+                                </tr>
+                            </aura:iteration>   
+                        </tbody>                  
+                    </table>
+                </lightning:card>
+            </lightning:layoutItem>
+        </aura:if>
+        <div class="slds-scrollable slds-scrollable_y" style="height:50rem;width:80rem">
+        <aura:if isTrue="{!v.showCreatePanel}" aura:id = "createNew">
+            <lightning:layoutItem size="12" >
+                    <aura:if isTrue="{!v.isNewYr}">
+                        <lightning:card title="CREATE NEW PLANNING WINDOW" footer="" class="slds-p-around_xx-small">
+                            <aura:if isTrue="{!v.isNewYr}">
+                                
+                                <lightning:input type="text" label="Selected Year" required="true" readonly="true" value="{!v.planningWindowObj.Planning_Year__c}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.isNewYr}">
+                                <lightning:select name="BudgetyearValueSel" label="Select Budget Year" required="true" value="{!v.planningWindowObj.Budget_Year__c}">
+                                    <option text="--Please Select--" value=""></option>
+                                    <aura:iteration items="{!v.BudgetyearOptions}" var="byearOpt">
+                                        <option text="{!byearOpt}" value="{!byearOpt.value}" selected="{!byearOpt.selected}"></option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </aura:if>
+                            
+                            <lightning:select name="typeSel" label="Select a Type" required="true" value="{!v.planningWindowObj.Type__c}" >
+                                
+                                <option text="--Please Select--" value=""></option>
+                                <aura:iteration items="{!v.typeOptions}" var="typeOpt">
+                                    <option text="{!typeOpt}" value="{!typeOpt.id}" selected="{!typeOpt.selected}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                            
+                            <lightning:select name="BLSel" label="Select Business Line" required="true" value="{!v.planningWindowObj.Business_Line__c}" >
+                                <option text="--Please Select--" value=""></option>
+                                <aura:iteration items="{!v.businessLineOptions}" var="typeOpt">
+                                    <option text="{!typeOpt}" value="{!typeOpt.id}" selected="{!typeOpt.selected}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                            
+                            
+                            <lightning:input type="datetime" label="Start Date" aura:id="strtTimeZone"  required="true" value="{!v.planningWindowObj.Plan_Start_Date__c}" onchange="{!c.onStartDateChange}" />
+                            <div ><span style="font-style: italic; color: red; font-size: 12px;">PLEASE NOTE THAT YOU ARE SELECTING THE TIME BASED ON YOUR LOCAL TIME ZONE. ALL THE VALUES WILL BE SAVED IN GMT </span>
+                                <aura:if isTrue="{!v.showZone}">
+                                    <span style="font-style: italic; color: red; font-size: 12px;"> WHICH IS  {!v.timezoneGMT} HOURS  OF THE LOCAL TIME</span></aura:if></div>
+                            
+                            
+                            <lightning:input type="datetime" label="End Date" required="true" value="{!v.planningWindowObj.Plan_End_Date__c}" onchange="{!c.onStartDateChange}"/>
+                            <div ><span style="font-style: italic; color: red; font-size: 12px;">PLEASE NOTE THAT YOU ARE SELECTING THE TIME BASED ON YOUR LOCAL TIME ZONE. ALL THE VALUES WILL BE SAVED IN GMT </span>
+                                <aura:if isTrue="{!v.showZone}">
+                                    <span style="font-style: italic; color: red; font-size: 12px;"> WHICH IS  {!v.timezoneGMT} HOURS  OF THE LOCAL TIME</span></aura:if> </div>
+                            
+                            <aura:if isTrue="{!v.isEditOp == false}">
+                                <lightning:button name="savePW" label="Save Data" variant="brand" onclick="{!c.createData}" />
+                                <aura:set attribute="else">
+                                    <lightning:button name="editPW" label="Update Data" variant="brand" onclick="{!c.executeUpdateOperation}" />
+                                </aura:set>
+                            </aura:if>
+                            <lightning:button name="Cancel" label="Cancel"  variant="brand" onclick="{!c.removeNewWindow}" />                   
+                        </lightning:card>
+                    </aura:if>
+                    <!--for Edit Window -->    
+                    <aura:if isTrue="{!v.isEditYr}">
+                        <lightning:card title="EDIT PLANNING WINDOW" footer="" class="slds-p-around_xx-small">
+                            
+                            <aura:if isTrue="{!v.isEditYr}">
+                                
+                                <lightning:input type="text" label="Selected Year"  required="true" readonly="true" value="{!v.planningWindowObj.Planning_Year__c}" />
+                            </aura:if>
+                            
+                            <aura:if isTrue="{!v.isNewYr}">
+                                
+                                <lightning:input type="text" label="Selected Year" required="true" readonly="true" value="{!v.planningWindowObj.Planning_Year__c}" />
+                            </aura:if>
+                            
+                            
+                            <aura:if isTrue="{!v.isEditYr}">
+                                <lightning:input type="text" label="Selected Budget Year"  required="true" readonly="true" value="{!v.planningWindowObj.Budget_Year__c}" />
+                                
+                                <lightning:select name="BudgetyearValueSel" label="Change Budget Year" required="true" value="{!v.planningWindowObj.Budget_Year__c}">
+                                    <option text="--Please Select--" value=""></option>
+                                    <aura:iteration items="{!v.BudgetyearOptions}" var="byearOpt">
+                                        <option text="{!byearOpt}" value="{!byearOpt.value}" selected="{!byearOpt.selected}"></option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </aura:if>
+                            
+                            <aura:if isTrue="{!v.isNewYr}">
+                                <lightning:select name="BudgetyearValueSel" aura:id="editInputId" label="Select Budget Year" required="true" value="{!v.planningWindowObj.Budget_Year__c}">
+                                    <option text="--Please Select--" value=""></option>
+                                    <aura:iteration items="{!v.BudgetyearOptions}" var="byearOpt">
+                                        <option text="{!byearOpt}" value="{!byearOpt.value}" selected="{!byearOpt.selected}"></option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </aura:if>
+                            
+                            <lightning:select name="typeSel" label="Select a Type" required="true" value="{!v.planningWindowObj.Type__c}" >
+                                
+                                <option text="--Please Select--" value=""></option>
+                                <aura:iteration items="{!v.typeOptions}" var="typeOpt">
+                                    <option text="{!typeOpt}" value="{!typeOpt.id}" selected="{!typeOpt.selected}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                            <lightning:select name="BLSel" label="Select Business Line" required="true" value="{!v.planningWindowObj.Business_Line__c}" >
+                                
+                                <option text="--Please Select--" value=""></option>
+                                <aura:iteration items="{!v.businessLineOptions}" var="typeOpt">
+                                    <option text="{!typeOpt}" value="{!typeOpt.id}" selected="{!typeOpt.selected}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                            
+                            
+                            <lightning:input type="datetime" label="Start Date" aura:id="strtTimeZone"  required="true" value="{!v.planningWindowObj.Plan_Start_Date__c}" onchange="{!c.onStartDateChange}" />
+                            <div ><span style="font-style: italic; color: red; font-size: 12px;">PLEASE NOTE THAT YOU ARE SELECTING THE TIME BASED ON YOUR LOCAL TIME ZONE. ALL THE VALUES WILL BE SAVED IN GMT </span>
+                                <aura:if isTrue="{!v.showZone}">
+                                    <span style="font-style: italic; color: red; font-size: 12px;"> WHICH IS  {!v.timezoneGMT} HOURS  OF THE LOCAL TIME</span></aura:if></div>
+                            
+                            
+                            <lightning:input type="datetime" label="End Date" required="true" value="{!v.planningWindowObj.Plan_End_Date__c}" onchange="{!c.onStartDateChange}"/>
+                            <div ><span style="font-style: italic; color: red; font-size: 12px;">PLEASE NOTE THAT YOU ARE SELECTING THE TIME BASED ON YOUR LOCAL TIME ZONE. ALL THE VALUES WILL BE SAVED IN GMT </span>
+                                <aura:if isTrue="{!v.showZone}">
+                                    <span style="font-style: italic; color: red; font-size: 12px;"> WHICH IS  {!v.timezoneGMT} HOURS  OF THE LOCAL TIME</span></aura:if> </div>
+                            
+                            <aura:if isTrue="{!v.isEditOp == false}">
+                                <lightning:button name="savePW" label="Save Data" variant="brand" onclick="{!c.createData}" />
+                                <aura:set attribute="else">
+                                    <lightning:button name="editPW" label="Update Data" variant="brand" onclick="{!c.executeUpdateOperation}" />
+                                </aura:set>
+                            </aura:if>
+                            <lightning:button name="Cancel" label="Cancel"  variant="brand" onclick="{!c.removeNewWindow}" />                   
+                        </lightning:card>
+                    </aura:if>
+                </lightning:layoutItem>
+            </aura:if>        
+        </div>
+        </lightning:layout>
+ 
+</aura:component>

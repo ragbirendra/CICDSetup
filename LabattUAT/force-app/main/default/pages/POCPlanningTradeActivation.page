@@ -1,0 +1,2492 @@
+<apex:page controller="POCPlanningApp" showHeader="false" sidebar="false">
+    <style type="text/css">
+        
+        .POCPlanningTradeActivation{
+        display: none;
+        width: 100%;            
+        z-index: 0;         
+        padding-bottom: 15px;
+        }
+        
+        .ProgramExecution {
+        font-size: 120%;
+        }
+        
+        .ProgramExecution input[type=text]{
+        width: 90%;
+        }
+        
+        .POCPlanningTradeActivation .ProgramShop{
+        right: 0px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        padding-left: 1%;
+        }
+        
+        .ProgramShop .ProgramTitle{
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: -0.25px;
+        }
+        
+        .ProgramInformation{
+        float: right;
+        }
+        
+        .ProgramInformation .fa{
+        font-size: 20px;
+        }
+        
+        .ProgramPromotional, .ProgramVisibility, .ProgramDriver, .ProgramKit{
+        font-size: 130%;
+        padding: 20px 5px;
+        border-top: 2px solid  rgb(200, 204, 206);
+        margin-top: 20px;
+        }
+        
+        .ProgramKit input[type=text]{
+        width: 60px;
+        }
+        
+        
+    </style>
+    
+    <script type="text/javascript">
+    
+    var approvalStatus;
+    var currentDate='2024-10-10';
+    var planningDateListTA = [];
+    var planningDateListTAIH = [];
+    var plan;
+    var budgetYear;
+    var flagOOH = false;
+    var flagIH = false;
+    function dateInputCleanup(date) {
+        if (typeof date != 'undefined' && (typeof date.getMonth == 'function' || date.indexOf('T') > -1)) {
+            date = (date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getUTCDate()));
+        }
+        return date;
+    }
+    
+    function displayMonth(dt) {
+        var month = new Array();
+        month[0] = "Jan";
+        month[1] = "Feb";
+        month[2] = "Mar";
+        month[3] = "Apr";
+        month[4] = "May";
+        month[5] = "Jun";
+        month[6] = "Jul";
+        month[7] = "Aug";
+        month[8] = "Sept";
+        month[9] = "Oct";
+        month[10] = "Nov";
+        month[11] = "Dec";
+        //if (dt.indexOf('-') > -1 && dt.split('-').length == 3) {
+        //  return month[parseInt(dt.split('-')[1])-1] + ' ' + dt.split('-')[2] + ', ' + dt.split('-')[0];
+        // } else {
+        return dt;
+        // }
+    }
+    
+    function POCTradeActivationVM(parent){
+        var self=this;
+        self.parent = parent;
+        self.initialQuery = true;
+        self.initialLoad = true;
+        
+        self.BrandList = ko.observableArray();
+        self.ProgramList = ko.observableArray();
+        self.DriverList = ko.observableArray();
+        self.VisibilityList = ko.observableArray();
+        self.PromotionalList = ko.observableArray();
+        self.KitList = ko.observableArray();
+        
+        self.BrandListIndex = ko.observable(0);
+        self.ProgramListIndex = ko.observable(0);
+        self.KitListIndex = ko.observable(0);
+        self.loadingKits = ko.observable(false);
+        
+        self.State = ko.observable();
+        
+        self.displayTAKitItemWarningModal = ko.observable(false);
+        
+        //If navigating from Dashboard or link
+        if(typeof parent.POCPlanningPOCNavigation.POCBudget != "undefined"){
+            self.State(parent.POCPlanningPOCNavigation.POCBudget.State());
+        }
+        //If navigating from nav buttons
+        else if(typeof parent.POCList()[parent.POCListIndex] != "undefined"){
+            self.State(parent.POCList()[parent.POCListIndex].State());
+        }
+        
+        self.isQuebec = ko.computed(function(){
+            console.log('self.State().search(/(qc|quebec)/ig)---'+self.State().search(/(qc|quebec)/ig)!= -1);
+            return (self.State().search(/(qc|quebec)/ig) != -1);
+        });
+        
+        self.HexColor = ko.observable(); //Set by Brand When Selected
+        
+        self.loadTradeActivation = function(POCId, State) {
+            console.log('-----parent.UrlParameters.Plan------',parent.UrlParameters.Plan);
+            POCPlanningApp.InitiateApp(parent.UrlParameters.TerritoryId, function(result, event){
+                console.log('InitiateAppintradeacti',result);
+                console.log('InitiateAppintradeacti',result);
+                console.log('InitiateAppintradeacti1111',result.SelectedYear.Territory.Approval_Status__c);
+                console.log('plan',result.Plan);
+                plan = result.Plan;
+                budgetYear = result.SelectedYear.Territory.Budget_Year__c;
+                console.log('budgetYear',budgetYear);
+                approvalStatus = result.SelectedYear.Territory.Approval_Status__c;
+                if(result.isBackOfficeUser){
+                    approvalStatus='Back Office'; 
+                }
+                
+            }),
+            POCPlanningApp.getFleixblePlanningWindowforTA(function(result2, event){
+                    console.log('getFleixblePlanningWindowforTA',result2);
+                    planningDateListTA = result2;
+                    
+                    
+                });
+            POCPlanningApp.getFleixblePlanningWindowforTAIH(function(result2, event){
+                console.log('getFleixblePlanningWindowforTAih',result2);
+                
+                planningDateListTAIH = result2;
+                
+            });
+            
+            
+            POCPlanningApp.TradeActivation(parent.UrlParameters.TerritoryId, POCId, State, parent.POCBudgetSummary.IsSpecialty(),parent.UrlParameters.Plan,parent.UrlParameters.Year, function(result,event){
+                console.log('result-----',result);
+                    self.initialLoad = true;
+                    self.BrandList.removeAll();
+                    
+                    for (var i = 0; i < result.length; i++){
+                        //if(result[i].Name != 'Alexander Keith\'s' && result[i].Name != 'Goose Island' && result[i].Name != 'Shock Top' && result[i].Name != 'Modelo' && result[i].Name != 'Mill St both' && result[i].Name != 'Mikes Bev' && result[i].Name != 'Palm Bay' && result[i].Name != 'Okanagan' && result[i].Name != 'Budwiser Prohibition' && result[i].Name != 'Budweiser')
+                        //{
+                        self.BrandList.push(new TAShopBrand(
+                            self,
+                            i,
+                            result[i].Id, //Id, 
+                            result[i].Name, //Name,
+                            parent.cleanValue(result[i].DriverSpend), //DriverSpend, 
+                            parent.cleanValue(result[i].DiscretionarySpend), //DiscretionarySpend, 
+                            result[i].HexColor //HexColor
+                        ));
+                        
+                        for(var j = 0; j < result[i].ProgramList.length; j++){
+                            console.log('---result[i].ProgramList--',result[i].ProgramList[j]);
+                            // console.log('result[i].ProgramList[j].PlanningStartDate',result[i].ProgramList[j].PlanningStart);
+                            self.BrandList()[i].ProgramList.push(new TAShopProgram(
+                                self,
+                                j,
+                                result[i].ProgramList[j].Id, //Id, 
+                                result[i].ProgramList[j].Name, //Name,
+                                result[i].ProgramList[j].KitId, //KitId,
+                                result[i].ProgramList[j].KitName, //KitName,
+                                parent.cleanValue(result[i].ProgramList[j].DriverSpend), //DriverSpend, 
+                                result[i].ProgramList[j].UserPaid, //userpaid checkbox, added by ankita sprint         W-014033
+                                parent.cleanValue(result[i].ProgramList[j].DiscretionarySpend), //DiscretionarySpend, 
+                                result[i].ProgramList[j].ProgramStart, //ProgramStartDate, 
+                                result[i].ProgramList[j].ProgramEnd, //ProgramEndDate, 
+                                dateInputCleanup(result[i].ProgramList[j].ExecutionStart), //ExecutionStartDate, 
+                                dateInputCleanup(result[i].ProgramList[j].ExecutionEnd), //ExecutionEndDate,  
+                                result[i].ProgramList[j].PlanningStart, //addedp2
+                                result[i].ProgramList[j].PlanningEnd, 
+                                result[i].ProgramList[j].Information,   //Information
+                                result[i].ProgramList[j].SalesSheets    //SalesSheets
+                            ));
+                            
+                            var DriverList;
+                            var VisibilityList;
+                            var PromotionalList;
+                            var UserPaidProgramList;
+                            //State is not Quebec
+                            if(State.search(/(qc|quebec)/ig)== -1){
+                                
+                                DriverList = result[i].ProgramList[j].DriverList;
+                                VisibilityList = result[i].ProgramList[j].VisibilityList;
+                                PromotionalList = result[i].ProgramList[j].PromotionalList;
+                                
+                                CountItemType = function(Qty){
+                                    if(Qty>0){
+                                        return 1;
+                                    } else {
+                                        return 0;
+                                    }
+                                }
+                                
+                                self.BrandList()[i].ProgramList()[j].initialLoad = true;
+                                //console.log('====Driver list----',DriverList);
+                                var ItemCount = 0;
+                                for(var k = 0; k < DriverList.length; k++){
+                                    self.BrandList()[i].ProgramList()[j].DriverList.push(new TAShopItem(
+                                        k,
+                                        self,
+                                        "Driver",
+                                        self.BrandList()[i].ProgramList()[j],
+                                        "",                                 //ParentKit
+                                        DriverList[k].Id,                   //Id, 
+                                        DriverList[k].Name,                 //Name, 
+                                        DriverList[k].KitItemId,            //KitItemId,
+                                        DriverList[k].SmlImage,             //SmlImage, 
+                                        DriverList[k].LrgImage,             //LrgImage,  
+                                        parent.cleanValue(DriverList[k].Price),                 //Price, 
+                                        DriverList[k].MinQty,               //MinQty, 
+                                        DriverList[k].Qty,                  //Qty, 
+                                        DriverList[k].QtyRmng,              //QtyRmng
+                                        parent.cleanBool(DriverList[k].Cancelled),          //Cancelled
+                                        false,
+                                        DriverList[k].QtyAllocatedToArea,
+                                        DriverList[k].AltID,
+                                        DriverList[k].Description,
+                                        DriverList[k].Size,                 //Size,
+                                        DriverList[k].Dimensions,           //Dimensions,
+                                        DriverList[k].Item_Type,            //ItemType,
+                                        DriverList[k].Material              //Material
+                                    ));
+                                    ItemCount += CountItemType(DriverList[k].Qty);
+                                    if (DriverList[k].MinQty != null) {
+                                        self.BrandList()[i].ProgramList()[j].hasMinQty(true);
+                                    }
+                                }
+                                
+                                self.BrandList()[i].ProgramList()[j].DriverItemCount(ItemCount);
+                                
+                                ItemCount = 0;
+                                for(var k = 0; k < VisibilityList.length; k++){
+                                    self.BrandList()[i].ProgramList()[j].VisibilityList.push(new TAShopItem(
+                                        k,
+                                        self,
+                                        "Visibility",
+                                        self.BrandList()[i].ProgramList()[j],
+                                        "",                                 //ParentKit
+                                        VisibilityList[k].Id,               //Id, 
+                                        VisibilityList[k].Name,             //Name, 
+                                        VisibilityList[k].KitItemId,        //KitItemId,
+                                        VisibilityList[k].SmlImage,         //SmlImage, 
+                                        VisibilityList[k].LrgImage,         //LrgImage, 
+                                        parent.cleanValue(VisibilityList[k].Price),             //Price, 
+                                        null,          //MinQty, 
+                                        VisibilityList[k].Qty,              //Qty, 
+                                        VisibilityList[k].QtyRmng,          //QtyRmng
+                                        parent.cleanBool(VisibilityList[k].Cancelled),      //Cancelled
+                                        true,
+                                        VisibilityList[k].QtyAllocatedToArea,
+                                        VisibilityList[k].AltID,
+                                        VisibilityList[k].Description,
+                                        VisibilityList[k].Size,             //Size,
+                                        VisibilityList[k].Dimensions,       //Dimensions,
+                                        VisibilityList[k].Item_Type,        //ItemType,
+                                        VisibilityList[k].Material          //Material
+                                    ));
+                                    ItemCount += CountItemType(VisibilityList[k].Qty);
+                                }
+                                self.BrandList()[i].ProgramList()[j].VisibilityItemCount(ItemCount);
+                                
+                                ItemCount = 0;
+                                for(var k = 0; k < PromotionalList.length; k++){
+                                    self.BrandList()[i].ProgramList()[j].PromotionalList.push(new TAShopItem(
+                                        k,
+                                        self,                               
+                                        "Promotional",
+                                        self.BrandList()[i].ProgramList()[j],
+                                        "",                                 //ParentKit
+                                        PromotionalList[k].Id,              //Id, 
+                                        PromotionalList[k].Name,            //Name, 
+                                        PromotionalList[k].KitItemId,       //KitItemId,
+                                        PromotionalList[k].SmlImage,        //SmlImage, 
+                                        PromotionalList[k].LrgImage,        //LrgImage, 
+                                        parent.cleanValue(PromotionalList[k].Price),            //Price, 
+                                        null,          //MinQty, 
+                                        PromotionalList[k].Qty,             //Qty, 
+                                        PromotionalList[k].QtyRmng,         //QtyRmng
+                                        parent.cleanBool(PromotionalList[k].Cancelled),     //Cancelled
+                                        true,
+                                        PromotionalList[k].QtyAllocatedToArea,
+                                        PromotionalList[k].AltID,
+                                        PromotionalList[k].Description,
+                                        PromotionalList[k].Size,            //Size,
+                                        PromotionalList[k].Dimensions,      //Dimensions,
+                                        PromotionalList[k].Item_Type,       //ItemType,
+                                        PromotionalList[k].Material         //Material
+                                    ));
+                                    ItemCount += CountItemType(PromotionalList[k].Qty);
+                                }
+                                self.BrandList()[i].ProgramList()[j].PromotionalItemCount(ItemCount);
+                                
+                                self.BrandList()[i].ProgramList()[j].initialLoad = false;                           
+                            } 
+                            //State is Quebec
+                            else {
+                                for(var k = 0; k<result[i].ProgramList[j].KitOptions.length; k++){
+                                    self.BrandList()[i].ProgramList()[j].KitOptions.push( new SelectOption(
+                                        result[i].ProgramList[j].KitOptions[k].Name, //Name, 
+                                        result[i].ProgramList[j].KitOptions[k].Id//Value
+                                    ));
+                                }
+                                
+                                for(var k = 0; k<result[i].ProgramList[j].KitList.length; k++){
+                                    console.log('===result[i].ProgramList[j].KitList===',result[i].ProgramList[j]);
+                                    console.log('result[i].ProgramList[j].PlanningStartDate1s',result[i].ProgramList[j].PlanningStart);
+                                    self.BrandList()[i].ProgramList()[j].KitList.push( new TAShopKit(
+                                        self, //parent, 
+                                        k, //i, 
+                                        result[i].ProgramList[j].KitList[k].Id, //Id 
+                                        result[i].ProgramList[j].KitList[k].ParentKitId, //ParentKitId,
+                                        result[i].ProgramList[j].KitList[k].Name,   //Name, 
+                                        result[i].ProgramList[j].KitList[k].Qty,    //Qty
+                                        0,
+                                        0,
+                                        dateInputCleanup(result[i].ProgramList[j].KitList[k].ExecutionStart), //ExecutionStartDate, 
+                                        dateInputCleanup(result[i].ProgramList[j].KitList[k].ExecutionEnd), //ExecutionEndDate
+                                        result[i].ProgramList[j]                        //Parent Program PlanningDate US For Quebec
+                                    ));
+                                    
+                                    DriverList = result[i].ProgramList[j].KitList[k].DriverList;
+                                    VisibilityList = result[i].ProgramList[j].KitList[k].VisibilityList;
+                                    PromotionalList = result[i].ProgramList[j].KitList[k].PromotionalList;
+                                    
+                                    for(var l = 0; l < DriverList.length; l++){
+                                        self.BrandList()[i].ProgramList()[j].KitList()[k].DriverList.push(new TAShopItem(
+                                            l,
+                                            self,
+                                            "Driver",
+                                            self.BrandList()[i].ProgramList()[j],
+                                            self.BrandList()[i].ProgramList()[j].KitList()[k],  //ParentKit
+                                            DriverList[l].Id,                   //Id, 
+                                            DriverList[l].Name,                 //Name, 
+                                            DriverList[l].KitItemId,            //KitItemId, 
+                                            DriverList[l].SmlImage,             //SmlImage, 
+                                            DriverList[l].LrgImage,             //LrgImage,
+                                            parent.cleanValue(DriverList[l].Price),                 //Price, 
+                                            DriverList[l].MinQty,               //MinQty, 
+                                            DriverList[l].Qty,                  //Qty, 
+                                            DriverList[l].QtyRmng,              //QtyRmng
+                                            parent.cleanBool(DriverList[l].Cancelled),          //Cancelled
+                                            true,
+                                            DriverList[l].QtyAllocatedToArea,
+                                            DriverList[l].AltID,
+                                            DriverList[l].Description,
+                                            DriverList[l].Size,                 //Size,
+                                            DriverList[l].Dimensions,           //Dimensions,
+                                            DriverList[l].Item_Type,            //ItemType,
+                                            DriverList[l].Material              //Material
+                                        ));
+                                    }
+                                    
+                                    for(var l = 0; l < VisibilityList.length; l++){
+                                        self.BrandList()[i].ProgramList()[j].KitList()[k].VisibilityList.push(new TAShopItem(
+                                            l,
+                                            self,
+                                            "Visibility",
+                                            self.BrandList()[i].ProgramList()[j],
+                                            self.BrandList()[i].ProgramList()[j].KitList()[k],  //ParentKit
+                                            VisibilityList[l].Id,               //Id, 
+                                            VisibilityList[l].Name,             //Name, 
+                                            VisibilityList[l].KitItemId,        //KitItemId,
+                                            VisibilityList[l].SmlImage,         //SmlImage, 
+                                            VisibilityList[l].LrgImage,         //LrgImage, 
+                                            parent.cleanValue(VisibilityList[l].Price),             //Price, 
+                                            VisibilityList[l].MinQty,           //MinQty, 
+                                            VisibilityList[l].Qty,              //Qty, 
+                                            VisibilityList[l].QtyRmng,          //QtyRmng
+                                            parent.cleanBool(VisibilityList[l].Cancelled),      //Cancelled
+                                            true,
+                                            VisibilityList[l].QtyAllocatedToArea,
+                                            VisibilityList[l].AltID,
+                                            VisibilityList[l].Description,
+                                            VisibilityList[l].Size,             //Size,
+                                            VisibilityList[l].Dimensions,       //Dimensions,
+                                            VisibilityList[l].Item_Type,        //ItemType,
+                                            VisibilityList[l].Material          //Material
+                                        ));
+                                    }
+                                    
+                                    for(var l = 0; l < PromotionalList.length; l++){
+                                        self.BrandList()[i].ProgramList()[j].KitList()[k].PromotionalList.push(new TAShopItem(
+                                            l,
+                                            self,                               
+                                            "Promotional",
+                                            self.BrandList()[i].ProgramList()[j],
+                                            self.BrandList()[i].ProgramList()[j].KitList()[k],  //ParentKit
+                                            PromotionalList[l].Id,              //Id, 
+                                            PromotionalList[l].Name,            //Name, 
+                                            PromotionalList[l].KitItemId,       //KitItemId,
+                                            PromotionalList[l].SmlImage,        //SmlImage, 
+                                            PromotionalList[l].LrgImage,        //LrgImage, 
+                                            parent.cleanValue(PromotionalList[l].Price),            //Price, 
+                                            PromotionalList[l].MinQty,          //MinQty, 
+                                            PromotionalList[l].Qty,             //Qty, 
+                                            PromotionalList[l].QtyRmng,         //QtyRmng
+                                            parent.cleanBool(PromotionalList[l].Cancelled),     //Cancelled
+                                            true,
+                                            PromotionalList[l].QtyAllocatedToArea,
+                                            PromotionalList[l].AltID,
+                                            PromotionalList[l].Description,
+                                            PromotionalList[l].Size,            //Size,
+                                            PromotionalList[l].Dimensions,      //Dimensions,
+                                            PromotionalList[l].Item_Type,       //ItemType,
+                                            PromotionalList[l].Material         //Material
+                                        ));
+                                    }
+                                }
+                            }
+                        }
+                        //}
+                    }
+                    
+                    
+                    for(var i = 0; i<self.BrandList().length; i++){
+                        self.BrandList()[i].i(i);
+                    }
+                    
+                    self.initialQuery = false;
+                    self.loadBrandPrograms(0);
+                    self.initialLoad = true;
+                    parent.ApplyPOCTradeActivationBinding();
+                    self.initialLoad = false;
+                });
+            self.State(State);              
+        }
+        
+        //Load Code
+        self.loadTradeActivation(parent.UrlParameters.POCId, self.State());
+        
+        self.loadBrandPrograms = function(i){
+            if(!self.initialQuery){
+                self.initialLoad = true;
+                self.BrandListIndex(i); 
+                console.log('====brand list ===',self.BrandList());
+                self.BrandList()[i].selected(true);
+                self.ProgramList(self.BrandList()[i].ProgramList());
+                self.ProgramList.sort(function(a,b){
+                    var param = "Name";
+                    var orderby = "asc";                
+                    return sortFunction(a, b, param, orderby);
+                });
+                
+                for(var i = 0; i<self.ProgramList().length; i++){
+                    self.ProgramList()[i].i(i);
+                }
+                
+                self.loadProgramItems(0);
+                self.initialLoad = false;
+            }                               
+        }
+        
+        self.loadProgramItems = function(i){
+            if(!self.initialQuery){
+                
+                self.ProgramListIndex(i);   
+                self.ProgramList()[i].selected(true);
+                
+                var DriverList = ko.observableArray();
+                var VisibilityList = ko.observableArray();
+                var PromotionalList = ko.observableArray();
+                
+                if(self.State().search(/(qc|quebec)/ig)== -1){
+                    DriverList(self.ProgramList()[i].DriverList());
+                    VisibilityList(self.ProgramList()[i].VisibilityList());
+                    PromotionalList(self.ProgramList()[i].PromotionalList());
+                    
+                    if(typeof self.ProgramDetails == "undefined"){
+                        self.ProgramDetails = new ProgramDetailsConst(
+                            self.ProgramList()[i],
+                            null,
+                            self.ProgramList()[i].ProgramStartDate(), 
+                            self.ProgramList()[i].ProgramEndDate(), 
+                            self.ProgramList()[i].ExecutionStartDate(), 
+                            self.ProgramList()[i].ExecutionEndDate(),
+                            self.ProgramList()[i].PlanningStartDate(), 
+                            self.ProgramList()[i].PlanningEndDate(), 
+                            self.ProgramList()[i].KitOptions(),
+                            self.ProgramList()[i].SelectedKit(),
+                            null,
+                            self.State()
+                        );
+                    } else {
+                        self.ProgramDetails.parent = self.ProgramList()[i];
+                        self.ProgramDetails.ParentKit = null;
+                        self.ProgramDetails.ProgramStartDate(self.ProgramList()[i].ProgramStartDate());
+                        self.ProgramDetails.ProgramEndDate(self.ProgramList()[i].ProgramEndDate()); 
+                        self.ProgramDetails.ExecutionStartDate(self.ProgramList()[i].ExecutionStartDate());
+                        self.ProgramDetails.ExecutionEndDate(self.ProgramList()[i].ExecutionEndDate());
+                        self.ProgramDetails.PlanningStartDate(self.ProgramList()[i].PlanningStartDate());
+                        self.ProgramDetails.PlanningEndDate(self.ProgramList()[i].PlanningEndDate()); 
+                        self.ProgramDetails.OldExecutionStartDate(self.ProgramList()[i].ExecutionStartDate());
+                        self.ProgramDetails.OldExecutionEndDate(self.ProgramList()[i].ExecutionEndDate());
+                        self.ProgramDetails.Qty(null);
+                        self.ProgramDetails.dateOutOfRange(false);
+                    }
+                    
+                    self.initialLoad = true;
+                    self.DriverList(DriverList());
+                    self.VisibilityList(VisibilityList());
+                    self.PromotionalList(PromotionalList());
+                    self.initialLoad = false;
+                    
+                    self.ProgramList()[i].initialLoad = true;
+                    self.ProgramList()[i].DriverCountCheck();
+                    self.ProgramList()[i].VisibilityCountCheck();
+                    self.ProgramList()[i].initialLoad = false;  
+                } 
+                //State is Quebec
+                else {
+                    self.loadKitItemsByIndex(0);
+                    self.loadKitsAsItems();
+                }                                  
+            }
+        }
+        
+        self.loadKitItemsByIndex = function(j){
+            var i = self.ProgramListIndex();
+            var DriverList = ko.observableArray(self.ProgramList()[i].KitList()[j].DriverList());
+            var VisibilityList = ko.observableArray(self.ProgramList()[i].KitList()[j].VisibilityList());
+            var PromotionalList = ko.observableArray(self.ProgramList()[i].KitList()[j].PromotionalList());
+            
+            if(typeof self.ProgramDetails == "undefined"){
+                console.log('self.ProgramDetails', self.ProgramDetails);
+                self.ProgramDetails = new ProgramDetailsConst(
+                    self.ProgramList()[i],
+                    self.ProgramList()[i].KitList()[j],
+                    self.ProgramList()[i].ProgramStartDate(), 
+                    self.ProgramList()[i].ProgramEndDate(), 
+                    self.ProgramList()[i].ExecutionStartDate(), 
+                    self.ProgramList()[i].ExecutionEndDate(),
+                    self.ProgramList()[i].PlanningStartDate(), 
+                    self.ProgramList()[i].PlanningEndDate(), //addedp2
+                    self.ProgramList()[i].KitOptions(),
+                    self.ProgramList()[i].SelectedKit(),
+                    self.ProgramList()[i].KitList()[j].Qty(),
+                    self.State()
+                );
+            } else {
+                self.ProgramDetails.parent = self.ProgramList()[i];
+                self.ProgramDetails.parentKit = self.ProgramList()[i].KitList()[j];
+                self.ProgramDetails.ProgramStartDate(self.ProgramList()[i].ProgramStartDate());
+                self.ProgramDetails.ProgramEndDate(self.ProgramList()[i].ProgramEndDate());
+                self.ProgramList()[i].initialLoad = true;
+                self.ProgramDetails.Qty(self.ProgramList()[i].KitList()[j].Qty());
+                self.ProgramDetails.ExecutionStartDate(self.ProgramList()[i].ExecutionStartDate());
+                self.ProgramDetails.ExecutionEndDate(self.ProgramList()[i].ExecutionEndDate());
+                self.ProgramDetails.PlanningStartDate(self.ProgramList()[i].PlanningStartDate()); //addedp2
+                self.ProgramDetails.PlanningEndDate(self.ProgramList()[i].PlanningEndDate()); 
+                self.ProgramList()[i].initialLoad = false;
+            }
+            
+            self.initialLoad = true;
+            self.DriverList(DriverList());
+            self.VisibilityList(VisibilityList());
+            self.PromotionalList(PromotionalList());
+            self.initialLoad = false;
+        }
+        
+        self.loadKitsAsItems = function(){
+            var i = self.ProgramListIndex();
+            self.initialLoad = true;
+            self.KitList(self.ProgramList()[i].KitList());
+            self.initialLoad = false;
+        }
+        
+        self.loadKitItems = function(KitId){
+            var i = self.ProgramListIndex();
+            for(var j = 0; j< self.ProgramList()[i].KitList().length; j++){
+                if(KitId == self.ProgramList()[i].KitList()[j].ParentKitId()){
+                    self.loadKitItemsByIndex(j);
+                    break;
+                }
+            }
+        }
+        
+        self.unselectBrands = function(n){
+            for(var i = 0; i<self.BrandList().length; i++){
+                if(i != n){
+                    self.BrandList()[i].selected(false);
+                }
+            }
+        }
+        
+        self.unselectPrograms = function(n){
+            for(var i = 0; i<self.ProgramList().length; i++){
+                if(i != n){
+                    self.ProgramList()[i].selected(false);
+                }
+            }
+        }
+        
+        //Sum Program Items Cost for display in UI
+        self.sumProgramItems = function (Type){                             
+            if(self.State().search(/(qc|quebec)/ig)== -1){
+                console.log('In a nonquebec')
+                var total = 0;
+                self.ProgramList()[self.ProgramListIndex()].DiscretionarySpend(0);
+                self.ProgramList()[self.ProgramListIndex()].UserPaid(0);
+                
+                if(Type == "Driver"){         // W-014033
+                    //if(self.ProgramList()[self.ProgramListIndex()].DiscretionarySpend()==0){
+                        console.log(' **** self.ProgramList()[self.ProgramListIndex()].DiscretionarySpend() ***'+self.ProgramList()[self.ProgramListIndex()].DiscretionarySpend());
+                        total += self.sumListTotalSpend(self.DriverList());
+                        total += self.sumListTotalSpend(self.VisibilityList());
+                        total += self.sumListTotalSpend(self.PromotionalList());
+                        /*  }
+                    else{
+                       total += self.sumListTotalSpend(self.DriverList());
+                        total += self.sumListTotalSpend(self.VisibilityList());
+                        total += self.sumListTotalSpend(self.PromotionalList());
+                    }*/
+                    console.log(' @@@@ total @@@@'+ total);
+                    console.log('*********',self.ProgramList()[self.ProgramListIndex()].UserPaid());
+                    if(!self.ProgramList()[self.ProgramListIndex()].UserPaid()){   //W-014033
+                        self.ProgramList()[self.ProgramListIndex()].DiscretionarySpend(window.cleanValue(total));
+                    }
+                    else{
+                        self.ProgramList()[self.ProgramListIndex()].UserPaidSpend(window.cleanValue(total));
+                    }
+                    
+                } else {
+                    console.log('self.ProgramList()[self.ProgramListIndex()].DriverSpend()'+self.ProgramList()[self.ProgramListIndex()].DriverSpend());
+                    if(self.ProgramList()[self.ProgramListIndex()].DriverSpend()==0){
+                        total += self.sumListTotalSpend(self.DriverList()); 
+                        total += self.sumListTotalSpend(self.VisibilityList());
+                        total += self.sumListTotalSpend(self.PromotionalList());
+                    }
+                    else
+                    {
+                        total += self.sumListTotalSpend(self.VisibilityList());
+                        total += self.sumListTotalSpend(self.PromotionalList());
+                    }
+                    self.ProgramList()[self.ProgramListIndex()].DiscretionarySpend(window.cleanValue(total));
+                }
+            } else {
+                var drivTotal = 0;
+                var discTotal = 0;
+                var List = self.ProgramList()[self.ProgramListIndex()].KitList();
+                if(Type == "All"){
+                    for(var i = 0; i<List.length; i++){
+                        var Qty = parent.cleanValue(List[i].Qty());
+                        drivTotal += (self.sumListTotalSpend(List[i].DriverList()) * Qty);
+                        discTotal += (self.sumListTotalSpend(List[i].VisibilityList()) * Qty);
+                        discTotal += (self.sumListTotalSpend(List[i].PromotionalList()) * Qty);
+                    }
+                    self.ProgramList()[self.ProgramListIndex()].DriverSpend(drivTotal);
+                    self.ProgramList()[self.ProgramListIndex()].DiscretionarySpend(discTotal);                       
+                }
+            }
+            
+            self.sumPrograms();
+        }
+        
+        self.sumListTotalSpend = function(List) {
+            var total = 0;
+            for(var i = 0; i<List.length; i++){
+                total = window.cleanValue(total + List[i].TotalSpend());
+            }
+            return total;
+        }
+        
+        self.sumPrograms = function(){
+            var OriginalDriverSpend = self.BrandList()[self.BrandListIndex()].DriverSpend();
+            var OriginalDiscretionarySpend  = self.BrandList()[self.BrandListIndex()].DiscretionarySpend();
+            var OriginalUserPaidSpend  = self.BrandList()[self.BrandListIndex()].UserPaidSpend();   //W-014033
+            console.log('###OriginalDriverSpend'+OriginalDriverSpend +'$$$$OriginalDiscretionarySpend' + OriginalUserPaidSpend+ ' @@@@ OriginalDiscretionarySpend'+OriginalDiscretionarySpend);
+            var driverTotal = 0;
+            var discretionaryTotal = 0;
+            var userPaidTotal=0;          //W-014033
+            var isBackOffice=parent.parent.POCPlanningPOCNavigation.isBackOffice;
+            console.log('===program list===',self.ProgramList());
+            // if(!isBackOffice){
+            for(var i = 0; i<self.ProgramList().length; i++){
+                // console.log('--->program list DriverSpend--->',self.ProgramList()[i].DriverSpend());
+                //console.log('--->program list DiscretionarySpend--->',self.ProgramList()[i].DiscretionarySpend());
+                console.log('===program list===',self.ProgramList()[0].UserPaid());
+                if(!isBackOffice){
+                    //  if(self.ProgramList()[0].UserPaid()){
+                    //	userPaidTotal += self.ProgramList()[i].DriverSpend();
+                    // }
+                    //else{
+                    driverTotal += self.ProgramList()[i].DriverSpend();
+                    userPaidTotal += self.ProgramList()[i].UserPaidSpend();   //W-014033
+                    // }
+                    discretionaryTotal += self.ProgramList()[i].DiscretionarySpend();
+                    console.log('&&&&&&&&&&&&&',userPaidTotal);
+                }
+                else
+                {
+                    if(self.ProgramList()[i].DriverSpend() != true && self.ProgramList()[i].DriverSpend() != false){
+                        discretionaryTotal += self.ProgramList()[i].DriverSpend();
+                        discretionaryTotal += self.ProgramList()[i].DiscretionarySpend();
+                        userPaidTotal += self.ProgramList()[i].UserPaidSpend();    //W-014033
+                    }
+                    else{
+                        //driverTotal += self.ProgramList()[i].DriverSpend();
+                        discretionaryTotal += self.ProgramList()[i].DiscretionarySpend(); 
+                        userPaidTotal += self.ProgramList()[i].UserPaidSpend();    //W-014033
+                    }
+                    
+                }
+                
+            }
+            //console.log('###driverTotal'+driverTotal +'$$$$discretionaryTotal' + discretionaryTotal);
+            //Update Brand Spend on POC TA Shopping Page 
+            self.BrandList()[self.BrandListIndex()].DriverSpend(driverTotal);
+            self.BrandList()[self.BrandListIndex()].DiscretionarySpend(discretionaryTotal);
+            self.BrandList()[self.BrandListIndex()].UserPaidSpend(userPaidTotal);    //W-014033
+            //}	
+            var DriverSpendDiff;
+            if(isBackOffice){
+                DriverSpendDiff =0;// window.cleanValue(driverTotal - OriginalDriverSpend);
+            }
+            else{
+                console.log('###driverTotal'+driverTotal +'$$$$OriginalDriverSpend' + OriginalDriverSpend);
+                DriverSpendDiff =window.cleanValue(driverTotal - OriginalDriverSpend);    
+            }
+            console.log('###DriverSpendDiff',DriverSpendDiff);
+            var DiscretionarySpendDiff = window.cleanValue(discretionaryTotal - OriginalDiscretionarySpend);
+            console.log('###DiscretionarySpendDiff',DiscretionarySpendDiff);
+            var userPaidSpendDiff =  window.cleanValue(userPaidTotal - OriginalUserPaidSpend);    //W-014033
+            console.log('###userPaidSpendDiff',userPaidSpendDiff);
+            self.updateBudget(self.BrandList()[self.BrandListIndex()].Id(), DriverSpendDiff, DiscretionarySpendDiff,userPaidSpendDiff);    //W-014033
+        }
+        
+        self.updateBudget = function(BrandId, DriverSpendDiff, DiscretionarySpendDiff, userPaidSpendDiff){     //W-014033
+            console.log('======in a to updateBudget Before',parent.POCPlanningPOCNavigation.POCBudget.TradeActivation());
+            console.log('====DriverSpendDiff @@'+DriverSpendDiff);
+            console.log('====DiscretionarySpendDiff @@'+DiscretionarySpendDiff);
+            console.log('====userPaidSpendDiff @@'+userPaidSpendDiff);
+            var isBackOffice=parent.parent.POCPlanningPOCNavigation.isBackOffice;
+            if(!isBackOffice){
+                parent.POCPlanningPOCNavigation.POCBudget.TradeActivation(
+                    parent.POCPlanningPOCNavigation.POCBudget.TradeActivation() +
+                    DriverSpendDiff + DiscretionarySpendDiff + userPaidSpendDiff
+                );
+            }
+            else{
+                 parent.POCPlanningPOCNavigation.POCBudget.Discretionary(
+                    parent.POCPlanningPOCNavigation.POCBudget.Discretionary() +
+                     DiscretionarySpendDiff + userPaidSpendDiff +DriverSpendDiff      // +DriverSpendDiff     //Updated By AP
+                );
+            }
+            // if(!isBackOffice){
+            //console.log('======in a to updateBudge',parent.POCPlanningPOCNavigation.POCBudget.TradeActivation());
+            for(var i = 0; i<parent.POCBudgetSummary.BrandBudgetList().length; i++){
+                if(BrandId == parent.POCBudgetSummary.BrandBudgetList()[i].BrandId()){ 
+                    // console.log('=====DriverSpendDiff=='+DriverSpendDiff+'===parent.POCBudgetSummary.BrandBudgetList()[i].Driver()=='+parent.POCBudgetSummary.BrandBudgetList()[i].Driver());
+                    /*   parent.POCBudgetSummary.BrandBudgetList()[i].Driver(                           //Driver
+                            window.cleanValue(parent.POCBudgetSummary.BrandBudgetList()[i].Driver() +
+                            DriverSpendDiff)
+                        );*/
+                    //console.log('=====DiscretionarySpendDiff=='+DiscretionarySpendDiff+'===parent.POCBudgetSummary.BrandBudgetList()[i].Discretionary()=='+parent.POCBudgetSummary.BrandBudgetList()[i].Discretionary()+'===DriverSpendDiff==='+DriverSpendDiff);
+                    parent.POCBudgetSummary.BrandBudgetList()[i].Discretionary(                 //AP Chagnes Query
+                        window.cleanValue(parent.POCBudgetSummary.BrandBudgetList()[i].Discretionary() +
+                                          DiscretionarySpendDiff  +DriverSpendDiff+ userPaidSpendDiff)                //W-014033   + DriverSpendDiff updated by AP
+                    );
+                    break;
+                }
+                //  }
+            }
+        }
+        
+        self.toggleTAKitItemWarning = function(show){
+            if (show && !self.initialLoad) {
+                $('#modalTAKitItemWarning').modal();
+            }
+        }
+        
+        self.toggleCustomizableModal = function(show, title, body) {
+            if (show && !self.initialLoad) {
+                parent.loadDialog(title, body);
+                $('#modalGeneric').modal();
+            }
+        }
+        
+        self.toggleProgramInformation = function(show){
+            if (show && !self.initialLoad) {
+                var Program = self.ProgramList()[self.ProgramListIndex()]
+                
+                var Title = Program.Name();
+                var Body = "";
+                Program.SalesSheets().forEach(function(item, index){
+                    Body += "<a href='"+ item +"'> Sales Sheet</a><br/>";
+                });
+                
+                Body += $("<div/>").html(Program.Information()).text();
+                parent.loadDialog(Title, Body);
+                $('#modalGeneric').modal();
+            }
+        }
+        
+        self.toggleImage = function(show, KitIndex, ItemIndex, ItemType){
+            if (show && !self.initialLoad) {
+                var Item;
+                if(self.State().search(/(qc|quebec)/ig)== -1){
+                    Item = self.ProgramList()[self.ProgramListIndex()][ItemType+'List']()[ItemIndex];
+                } else {
+                    Item = self.ProgramList()[self.ProgramListIndex()].KitList()[KitIndex][ItemType+'List']()[ItemIndex];
+                }
+                
+                var Title = Item.Name();
+                var Body = "<img src='"+ Item.LrgImage() +"' alt='"+ Item.Name() + "' width='auto' max-height='580px'>";
+                
+                parent.loadDialog(Title, Body);
+                $('#modalGeneric').modal();
+            }
+        }       
+    }
+    
+    function ProgramDetailsConst(parent, parentKit, ProgramStartDate, ProgramEndDate, ExecutionStartDate, ExecutionEndDate,PlanningStartDate,PlanningEndDate, KitOptions, SelectedKit, Qty, State){
+        //debugger;
+        var self = this;
+        self.parent = parent;
+        self.parentKit = parentKit;
+        self.dateOutOfRange = ko.observable(false);
+        self.ProgramStartDate = ko.observable(ProgramStartDate);
+        self.ProgramEndDate = ko.observable(ProgramEndDate);
+        self.OldExecutionStartDate = ko.observable(ExecutionStartDate);
+        self.OldExecutionEndDate = ko.observable(ExecutionEndDate);
+        self.PlanningStartDate = ko.observable(PlanningStartDate);
+        self.PlanningEndDate = ko.observable(PlanningEndDate);
+        self.currentDate = ko.computed(function(){
+            var today = new Date();
+            var dd = String(today.getDate()).padStart(2, '0');
+            var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = today.getFullYear();
+            today = yyyy + '-' + dd + '-' +mm ;
+            //document.write(today);
+            console.log('todaydatetete'+today);
+            // currentDate = today;
+            
+        });
+        
+        self.compareDate = ko.computed(function(){
+            //console.log('compareDate',PlanningStartDate);
+            // console.log('compareDate',PlanningEndDate);
+            if(self.PlanningStartDate <= currentDate && self.PlanningEndDate >= currentDate){
+                console.log('return false');
+                return false;
+            }else{
+                console.log('return true');
+                return true;
+            }
+            
+        });
+        
+        self.ExecutionStartDate = ko.observable(ExecutionStartDate);
+        self.ExecutionStartDate.subscribe(function() {
+            var oldExecutionDate = self.OldExecutionStartDate();
+            var isDateOK = true;
+            //need to change this logic
+            if (self.ProgramStartDate() != 'N/A' && self.ExecutionStartDate() != null && typeof self.ExecutionStartDate() != 'undefined') {
+                isDateOK = compareExecutionDates(self.ProgramStartDate(), self.ExecutionStartDate());
+                isDateOK ? isDateOK = compareExecutionDates(self.ExecutionStartDate(), self.ProgramEndDate()) : null;
+            }
+            if (isDateOK && self.ExecutionEndDate() != null && typeof self.ExecutionEndDate() != 'undefined' && self.ExecutionStartDate() != null && typeof self.ExecutionStartDate() != 'undefined') {
+                isDateOK = compareExecutionDates(self.ExecutionStartDate(), self.ExecutionEndDate());
+            }
+            if (isDateOK) {
+                self.parent.ExecutionStartDate(self.ExecutionStartDate());
+                
+                self.dateOutOfRange(false);
+            } else {
+                self.dateOutOfRange(true);
+                self.ExecutionStartDate(oldExecutionDate);
+                self.OldExecutionStartDate(oldExecutionDate);
+            }
+        });
+        self.ExecutionEndDate = ko.observable(ExecutionEndDate);
+        self.ExecutionEndDate.subscribe(function() {
+            var oldExecutionDate = self.OldExecutionEndDate();
+            var isDateOK = true;
+            if (self.ProgramEndDate() != 'N/A' && self.ExecutionEndDate() != null && typeof self.ExecutionEndDate() != 'undefined') {
+                isDateOK = compareExecutionDates(self.ExecutionEndDate(), self.ProgramEndDate());
+                isDateOK ? isDateOK = compareExecutionDates(self.ProgramStartDate(), self.ExecutionEndDate()) : null;
+            }
+            if (isDateOK  && self.ExecutionStartDate() != null && typeof self.ExecutionStartDate() != 'undefined' && self.ExecutionEndDate() != null && typeof self.ExecutionEndDate() != 'undefined') {
+                isDateOK = compareExecutionDates(self.ExecutionStartDate(), self.ExecutionEndDate());
+            }               
+            if (isDateOK) {
+                self.parent.ExecutionEndDate(self.ExecutionEndDate());
+                
+                self.dateOutOfRange(false);
+            } else {
+                self.dateOutOfRange(true);
+                self.ExecutionEndDate(oldExecutionDate);
+                self.OldExecutionEndDate(oldExecutionDate);
+            }
+            self.parent.ExecutionEndDate(self.ExecutionEndDate());
+        });
+        
+        self.ExecutionStartDateBlank = ko.computed(function() {
+            return (typeof self.ExecutionStartDate() == "undefined" || self.ExecutionStartDate() == null)
+        });
+        
+        self.ExecutionEndDateBlank = ko.computed(function(){
+            return (typeof self.ExecutionEndDate() == "undefined" || self.ExecutionEndDate() == null)
+        });
+        
+        
+        self.PlanningStartDateBlank = ko.computed(function() {
+            console.log('insidePlanningStartDateBlank',self.compareDate());
+            return self.compareDate(); //(typeof self.PlanningStartDate() == "undefined" || self.PlanningStartDate() == null)
+        });
+        
+        
+        self.PlanningEndDateBlank = ko.computed(function() {
+            console.log('insidePlanningEndDateBlank');
+            return self.compareDate(); //return (typeof self.PlanningEndDate() == "undefined" || self.PlanningStartDate() == null)
+        });
+        
+        self.ExecutionStartDate.subscribe(function(oldValue) {
+            self.OldExecutionStartDate(oldValue);
+        }, 'beforeChange');
+        
+        self.ExecutionEndDate.subscribe(function(oldValue) {
+            self.OldExecutionEndDate(oldValue)
+        }, 'beforeChange');
+        
+        self.Qty = ko.observable(Qty);
+        self.Qty.subscribe(function(){
+            self.parentKit.Qty(self.Qty());
+        });
+    }
+    
+    function TAShopBrand(parent, i, Id, Name, DriverSpend, DiscretionarySpend, HexColor){
+        // debugger;
+        var self = this;
+        self.i = ko.observable(i);
+        self.Id = ko.observable(Id);
+        self.Name = ko.observable(Name);
+        self.DriverSpend = ko.observable(DriverSpend);
+        self.DiscretionarySpend = ko.observable(DiscretionarySpend);
+        self.UserPaidSpend= ko.observable(0);
+        self.TotalSpend = ko.computed(function(){
+            console.log('===Total Spend in TAShopBrand==='+self.DriverSpend() +'@@@@@'+self.DiscretionarySpend());
+            return window.cleanValue(self.DriverSpend() + self.DiscretionarySpend() +  self.UserPaidSpend());  //
+        });
+        self.HexColor = ko.observable(HexColor);
+        self.ProgramList = ko.observableArray();
+        
+        self.selected = ko.observable(false);
+        
+        self.selected.subscribe(function(){
+            if(self.selected()){
+                parent.HexColor(self.HexColor());
+                parent.unselectBrands(self.i());
+            }
+        });
+    }
+    
+    function TAShopProgram(parent, i, Id, Name, KitId, KitName, DriverSpend,UserPaid, DiscretionarySpend, ProgramStartDate, ProgramEndDate, ExecutionStartDate, ExecutionEndDate, PlanningStartDate,PlanningEndDate, Information, SalesSheets){    //W-014033
+        // debugger;
+        console.log('PlanningStartDate2222',PlanningStartDate);
+        var self = this;
+        self.initialLoad = true;
+        self.parent = parent;
+        self.i = ko.observable(i);
+        self.Id = ko.observable(Id);
+        self.Name = ko.observable(Name);
+        self.UserPaid = ko.observable(UserPaid); //added  for sprint 1 user story   W-014033
+        self.Information = ko.observable(Information);          
+        self.KitId = ko.observable(KitId);
+        self.KitName = ko.observable(KitName);
+        self.UnlockedSpCat = ko.observable(false);
+        
+        self.hasMinQty = ko.observable(false);
+        
+        self.DriverSpend = ko.observable(DriverSpend);
+        console.log('=======USer Paid----',self.UserPaid());
+        if(!self.UserPaid()){     //W-014033
+            console.log('==== in a no user paid');
+            self.DiscretionarySpend = ko.observable(DiscretionarySpend);
+            self.UserPaidSpend= ko.observable(0);
+            //self.DriverSpend = ko.observable(DiscretionarySpend);
+        }
+        else{
+            console.log('==== in a  user paid');
+            self.UserPaidSpend= ko.observable(DiscretionarySpend); 
+            self.DiscretionarySpend = ko.observable(0);
+        }
+        self.TotalSpend = ko.computed(function(){
+            console.log('===ina total spend TA Shop program'+self.DriverSpend()+'---'+self.DiscretionarySpend() +'====='+self.UserPaidSpend());
+            if(!self.UserPaid()){
+            	return self.DriverSpend()  + self.DiscretionarySpend();              //W-014033  + self.DiscretionarySpend()
+            }
+            else{
+                return self.DriverSpend()  +self.UserPaidSpend() ;
+            }     
+        });
+        self.ProgramStartDate = ko.observable(ProgramStartDate);
+        if(typeof self.ProgramStartDate() == "undefined" || self.ProgramStartDate() == null){
+            self.ProgramStartDate('N/A');
+        }
+        self.ProgramEndDate = ko.observable(ProgramEndDate);
+        if(typeof self.ProgramEndDate() == "undefined" || self.ProgramEndDate() == null){
+            self.ProgramEndDate('N/A');
+        }
+        self.compareDate = ko.computed(function(){
+            console.log('compareDate',PlanningStartDate);
+            console.log('compareDate',PlanningEndDate);
+            if(self.PlanningStartDate <= currentDate && self.PlanningEndDate >= currentDate){
+                console.log('return false');
+                return false;
+            }else{
+                console.log('return true');
+                return true;
+            }
+            
+        });
+        
+        self.PlanningStartDate = ko.observable(PlanningStartDate);
+        self.PlanningStartDateBlank = ko.computed(function() {
+            return  self.compareDate();//(typeof self.PlanningStartDate() == "undefined" || self.PlanningStartDate() == null);
+        });
+        /*   if(typeof self.PlanningStartDate() == "undefined" || self.PlanningStartDate() == null){
+            self.ProgramEndDate('N/A');
+        } */
+        
+        self.PlanningEndDate = ko.observable(PlanningEndDate);
+        self.PlanningEndDateBlank = ko.computed(function() {
+            return (typeof self.PlanningEndDate() == "undefined")
+        });
+        
+        self.ExecutionStartDate = ko.observable(ExecutionStartDate);
+        self.ExecutionStartDateBlank = ko.computed(function() {
+            return (typeof self.ExecutionStartDate() == "undefined")
+        });
+        
+        self.ExecutionEndDate = ko.observable(ExecutionEndDate);
+        self.ExecutionEndDateBlank = ko.computed(function(){
+            return (typeof self.ExecutionEndDate() == "undefined")
+        });
+        
+        self.SalesSheets = ko.observableArray(SalesSheets);
+        
+        self.KitList = ko.observableArray();
+        
+        self.KitOptions = ko.observableArray();
+        self.SelectedKit = ko.observable();
+        
+        self.DriverList = ko.observableArray();
+        self.DriverItemCount = ko.observable(0);
+        self.DriverItemDisable = ko.observable();
+        self.VisibilityList = ko.observableArray();
+        self.VisibilityItemCount = ko.observable(0);
+        self.VisibilityItemDisable = ko.observable();
+        self.PromotionalList = ko.observableArray();
+        self.PromotionalItemCount = ko.observable(0);
+        self.PromotionalItemDisable = ko.observable();
+        
+        self.selected = ko.observable(false);
+        
+        self.selected.subscribe(function(){
+            if(self.selected()){
+                parent.unselectPrograms(self.i());
+            }
+        });
+        
+        self.SelectedKit.subscribe(function(){
+            if(!parent.initialLoad && parent.loadingKits()){
+                parent.loadKitItems(self.SelectedKit().Value);
+            }               
+        });
+        
+        self.ItemEnableDisable = function(type, state){                             
+            if(type == "Visibility"){
+                for(var i = 0; i<self.VisibilityList().length; i++){
+                    if(!self.VisibilityList()[i].Cancelled()){
+                        self.VisibilityList()[i].isDisabled(state);
+                    }                       
+                }
+            } else if (type == "Promotional"){
+                for(var i = 0; i<self.PromotionalList().length; i++){
+                    if(!self.PromotionalList()[i].Cancelled()){
+                        self.PromotionalList()[i].isDisabled(state);
+                    }
+                }
+            }               
+        }
+        var isBackOffice=parent.parent.POCPlanningPOCNavigation.isBackOffice;           //AP Changes W-013969
+        
+        self.DriverCountCheck = function(){
+            //If Drivers over Quota and Visibility is currently Disabled
+            //console.log('====self.DriverItemCount()==',self.DriverItemCount());
+            if(isBackOffice)                                                            //AP Changes W-013969
+            {
+                self.VisibilityItemDisable(false); //False
+                self.ItemEnableDisable("Visibility", self.VisibilityItemDisable());
+                self.UnlockedSpCat(true);                   
+                self.VisibilityCountCheck();
+            }
+            else
+            {
+                if((self.DriverItemCount()>=parseInt(parent.parent.KitThreshold.Driver)) /*&& (self.VisibilityItemDisable() || typeof self.VisibilityItemDisable() == "undefined")*/){                  
+                    self.VisibilityItemDisable(false);
+                    self.ItemEnableDisable("Visibility", self.VisibilityItemDisable());
+                    self.UnlockedSpCat(true);                   
+                    self.VisibilityCountCheck();
+                } else if((self.DriverItemCount()<parseInt(parent.parent.KitThreshold.Driver)) /*&& (!self.VisibilityItemDisable()|| typeof self.VisibilityItemDisable() == "undefined")*/){
+                    self.VisibilityItemDisable(true);
+                    self.ItemEnableDisable("Visibility", self.VisibilityItemDisable());
+                    self.ItemEnableDisable("Promotional", self.VisibilityItemDisable());                    
+                    if(!self.initialLoad && self.VisibilityItemCount()>0){
+                        parent.toggleTAKitItemWarning(true);
+                    }
+                }
+            }
+        }
+        
+        self.DriverItemCount.subscribe(self.DriverCountCheck);
+        
+        self.VisibilityCountCheck = function(){
+            console.log("#### 20 ####");
+            if(isBackOffice)           //AP Changes W-013969
+            {
+                self.PromotionalItemDisable(false);
+                self.ItemEnableDisable("Promotional", self.PromotionalItemDisable());
+            }
+            else
+            {
+                if((self.VisibilityItemCount()>=parseInt(parent.parent.KitThreshold.Visibility)) /*&& (self.PromotionalItemDisable() || typeof self.PromotionalItemDisable() == "undefined")*/){
+                    self.PromotionalItemDisable(false);
+                    self.ItemEnableDisable("Promotional", self.PromotionalItemDisable());
+                } else if((self.VisibilityItemCount()<parseInt(parent.parent.KitThreshold.Visibility)) /*&& (!self.PromotionalItemDisable() || typeof self.PromotionalItemDisable() == "undefined")*/){
+                    self.PromotionalItemDisable(true);
+                    self.ItemEnableDisable("Promotional", self.PromotionalItemDisable());
+                    if(!self.initialLoad && !self.UnlockedSpCat() && self.PromotionalItemCount()>0){
+                        parent.toggleTAKitItemWarning(true);
+                    }
+                    self.UnlockedSpCat(false);
+                }
+            }
+        }
+        
+        self.VisibilityItemCount.subscribe(self.VisibilityCountCheck);
+        
+        self.createTAKit = function(child, parent, Type, Kit, isMinQty) {
+            var KitName = (parent.parent.POCPlanningPOCNavigation.POCBudget.Name() + " " +
+                           parent.ProgramList()[parent.ProgramListIndex()].Name() + " " +
+                           parent.parent.UrlParameters.Year);
+            
+            $('#loader-wrapper').css('display', 'block');
+            var isBackOffice=parent.parent.POCPlanningPOCNavigation.isBackOffice;         //AP CHGanges W-013969
+            // console.log('====isBackOffice',isBackOffice);
+            var isBackOfficeElite=parent.parent.POCPlanningPOCNavigation.isBackOfficeElite;
+            //console.log('====isBackOfficeElite',isBackOfficeElite);
+            var pocSpendCatId;                       //AP Changes W013969
+            pocSpendCatId=parent.parent.POCPlanningPOCNavigation.POCBudget.TradeActivationId();
+            
+            POCPlanningApp.CreateTAKit(
+                KitName,                                                                //String Name
+                pocSpendCatId,                                                           //String POCSpCatId, 
+                function(){                                                             //String ABABPId, 
+                    var BrandId = parent.BrandList()[parent.BrandListIndex()].Id();
+                    for(var i = 0; i<parent.parent.POCBudgetSummary.BrandBudgetList().length; i++){
+                        if(BrandId == parent.parent.POCBudgetSummary.BrandBudgetList()[i].BrandId()){                       
+                            return parent.parent.POCBudgetSummary.BrandBudgetList()[i].Id();
+                        }
+                    }
+                }(), 
+                self.Id(),                              //String ProgNameId
+                function(){                             //ExecutionStart
+                if(typeof self.ExecutionStartDate() != "undefined"){
+                    return self.ExecutionStartDate();
+                } else {
+                    return null;
+                }
+            }(),
+                function(){                             //ExecutionEnd
+                if(typeof self.ExecutionEndDate() != "undefined"){
+                    return self.ExecutionEndDate();
+                } else {
+                    return null;
+                }
+            }(),
+                function(){                             //Type  
+                if(typeof Type != "undefined"){
+                    return Type;
+                } else {
+                    return null;
+                }
+            }(),
+                function(){                             //ParentKitId   
+                if(typeof Kit != "undefined"){
+                    return Kit.ParentKitId();
+                } else {
+                    return null;
+                }
+            }(),
+                function(){                             //Qty   
+                if(typeof Kit != "undefined"){
+                    return Kit.Qty();
+                } else {
+                    return null;
+                }
+            }(),                                    
+                function(result, event){
+                self.KitId(result);
+                if(typeof Kit != "undefined"){
+                    Kit.Id(result);
+                }                   
+                if(child != null && !isMinQty) {
+                    child.createTAKitItem();
+                }
+                if (isMinQty) {
+                    child.runMassUpdateForMinQty();
+                }
+                $('#loader-wrapper').css('display', 'none');                    
+            }
+            );
+        }
+        
+        self.updateTAKit = function(KitId, Qty){
+            if(!self.initialLoad && !parent.initialLoad){
+                POCPlanningApp.UpdateTAKit(
+                    KitId, //String Id, 
+                    function(){     //Date ExecutionStart, 
+                        if(typeof self.ExecutionStartDate() != "undefined"){
+                            return self.ExecutionStartDate();
+                        } else {
+                            return null;
+                        }
+                    }(),
+                    function(){     //Date ExecutionEnd
+                    if(typeof self.ExecutionEndDate() != "undefined"){
+                        return self.ExecutionEndDate();
+                    } else {
+                        return null;
+                    }
+                }(),
+                    function(){     //Date ExecutionEnd
+                    if(typeof Qty != "undefined"){
+                        return Qty;
+                    } else {
+                        return null;
+                    }
+                }(),
+                    function(result, event){
+                    
+                }
+                );
+            }               
+        }
+        
+        self.UpdateQuebecTAKitDates = function(){
+            
+            POCPlanningApp.UpdateQuebecTAKitDates(
+                parent.parent.POCPlanningPOCNavigation.POCBudget.TradeActivationId(),   //String POCSpCatId 
+                self.Id(), //ProgramId, 
+                function(){     //Date ExecutionStart, 
+                    if(typeof self.ExecutionStartDate() != "undefined"){
+                        return self.ExecutionStartDate();
+                    } else {
+                        return null;
+                    }
+                }(),
+                function(){     //Date ExecutionEnd
+                if(typeof self.ExecutionEndDate() != "undefined"){
+                    return self.ExecutionEndDate();
+                } else {
+                    return null;
+                }
+            }(),
+                function(result, event){
+                
+            }
+            );
+        }
+        
+        self.InsertUpdateLogic = function(){
+            
+            if(typeof self.KitId() != "undefined") {
+                self.updateTAKit(self.KitId(), null);
+            } else {
+                self.createTAKit(null, parent, 'Custom', undefined, false);
+            }
+        }
+        
+        function pad(n) {
+            return (n < 10) ? ("0" + n) : n;
+        }
+        
+        self.ExecutionStartDate.subscribe(function() {
+            if (typeof self.ExecutionEndDate() != 'undefined' && (typeof self.ExecutionEndDate().getMonth == 'function' || self.ExecutionEndDate().indexOf('T') > -1)) {
+                self.ExecutionEndDate(self.ExecutionEndDate().getFullYear() + '-' + pad(self.ExecutionEndDate().getMonth() + 1) + '-' + pad(self.ExecutionEndDate().getUTCDate()));
+            } else if (typeof self.ExecutionStartDate() != 'undefined' && (typeof self.ExecutionStartDate().getMonth == 'function' || self.ExecutionStartDate().indexOf('T') > -1)) {
+                self.ExecutionStartDate(self.ExecutionStartDate().getFullYear() + '-' + pad(self.ExecutionStartDate().getMonth() + 1) + '-' + pad(self.ExecutionStartDate().getUTCDate()));
+            } else {
+                if(typeof self.KitId() != "undefined") {
+                    if(parent.State().search(/(qc|quebec)/ig)== -1){                      
+                        self.InsertUpdateLogic();
+                    } else{
+                        self.UpdateQuebecTAKitDates();
+                    }
+                }
+            }
+        });
+        ///check for logic
+        self.ExecutionEndDate.subscribe(function() {
+            if (typeof self.ExecutionStartDate() != 'undefined' && (typeof self.ExecutionStartDate().getMonth == 'function' || self.ExecutionStartDate().indexOf('T') > -1)) {
+                self.ExecutionStartDate(self.ExecutionStartDate().getFullYear() + '-' + pad(self.ExecutionStartDate().getMonth() + 1) + '-' + pad(self.ExecutionStartDate().getUTCDate()));
+            } else if (typeof self.ExecutionEndDate() != 'undefined' && (typeof self.ExecutionEndDate().getMonth == 'function' || self.ExecutionEndDate().indexOf('T') > -1)) {
+                self.ExecutionEndDate(self.ExecutionEndDate().getFullYear() + '-' + pad(self.ExecutionEndDate().getMonth() + 1) + '-' + pad(self.ExecutionEndDate().getUTCDate()));
+            } else {
+                if(typeof self.KitId() != "undefined") {
+                    if(parent.State().search(/(qc|quebec)/ig)== -1){
+                        self.InsertUpdateLogic();
+                    } else{
+                        self.UpdateQuebecTAKitDates();
+                    }
+                }
+            }           
+        });
+        
+        self.setMinQty = ko.observable(false);
+        
+        self.initialLoad = false;
+    }
+    
+    function compareExecutionDates(greaterDate, lesserDate) {
+        if (typeof lesserDate.getMonth === 'function') {
+            lesserDate = lesserDate.getFullYear() + '-' + (lesserDate.getMonth() + 1) + '-' + (lesserDate.getUTCDate());
+        }
+        lesserDate = lesserDate.split('-');
+        
+        if (typeof greaterDate.getMonth === 'function') {
+            greaterDate = greaterDate.getFullYear() + '-' + (greaterDate.getMonth() + 1) + '-' + (greaterDate.getUTCDate());
+        }
+        greaterDate = greaterDate.split('-');
+        
+        if (parseInt(greaterDate[0]) > parseInt(lesserDate[0])) {
+            return false;
+        } else if (parseInt(greaterDate[1]) > parseInt(lesserDate[1]) && parseInt(greaterDate[0]) == parseInt(lesserDate[0])) {
+            return false;
+        } else if (parseInt(greaterDate[2]) > parseInt(lesserDate[2]) && parseInt(greaterDate[0]) == parseInt(lesserDate[0]) && parseInt(greaterDate[1]) == parseInt(lesserDate[1])) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+    
+    function comparePlanningAndCurrentDates(startDate, endDate) {
+        // debugger;
+        var currentDate = currentDate;
+        if(startDate <= currentDate && currentDate <= endDate){
+            return true;
+        }else{
+            return false;
+        }
+        
+    }
+    
+    function TAShopKit(parent, i, Id, ParentKitId, Name, Qty, DriverSpend, DiscretionarySpend, ExecutionStartDate, ExecutionEndDate,ParentProgram){    //Parent Program Parameter added PlanningDate US For Quebec
+        //debugger;
+        var self = this;
+        self.i = ko.observable(i);
+        self.Id = ko.observable(Id);
+        console.log('-----ParentPrograquebec',ParentProgram);
+        self.ParentProgram = ParentProgram;                    //Parent Program PlanningDate US For Quebec
+        self.ParentKitId = ko.observable(ParentKitId);          
+        self.Name = ko.observable(Name);
+        self.Qty = ko.observable(Qty);
+        self.OldQty = ko.observable(Qty || 0);
+        self.ResetQty = ko.observable(false);
+        self.DriverList = ko.observableArray();
+        self.VisibilityList = ko.observableArray();
+        self.PromotionalList = ko.observableArray();
+        
+        self.DriverSpend = ko.observable(DriverSpend);
+        self.DiscretionarySpend = ko.observable(DiscretionarySpend);
+        
+        self.DriverSpend = ko.computed(function(){
+            var driverSpend = 0;
+            self.DriverList().forEach(function(dl) {
+                console.log('====in a calculation of all driver spend===');
+                driverSpend += dl.Price() * dl.Qty();
+            });
+            return driverSpend;
+        });
+        self.DiscretionarySpend = ko.computed(function(){
+            var discretionarySpend = 0;
+            self.VisibilityList().forEach(function(dl) {
+                console.log('====in a calculation of all Visibility spend===');
+                discretionarySpend += dl.Price() * dl.Qty();
+            });
+            self.PromotionalList().forEach(function(dl) {
+                console.log('====in a calculation of all Discretionary spend===');
+                discretionarySpend += dl.Price() * dl.Qty();
+            });
+            return discretionarySpend;
+        });
+        
+        self.TotalSpend = ko.computed(function(){
+            return self.DriverSpend() + self.DiscretionarySpend();
+        });
+        
+        self.QtyExceeded = ko.observable(false);
+        
+        self.InsertUpdateLogic = function(){
+            if(typeof self.Id() != "undefined"){
+                parent.ProgramList()[parent.ProgramListIndex()].updateTAKit(
+                    self.Id(), //KitId
+                    self.Qty() //Qty
+                );
+            } else {
+                parent.ProgramList()[parent.ProgramListIndex()].createTAKit(
+                    null, //child
+                    parent, //parent, 
+                    'Assigned_Preconfigured',//Type
+                    self, //Kit 
+                    false
+                );
+            }
+        }
+        
+        self.Qty.subscribe(function(qty){
+            var regex = new RegExp('^[0-9]+$');
+            if ( regex.test( self.Qty() ) ) {
+                var qtyCheck = true;
+                var skip = false;
+                self.DriverList().forEach(function(driver) {
+                    qtyCheckFunction(driver);
+                });
+                
+                self.VisibilityList().forEach(function(driver) {
+                    qtyCheckFunction(driver);
+                });
+                
+                self.PromotionalList().forEach(function(driver) {
+                    qtyCheckFunction(driver);
+                });
+                
+                function qtyCheckFunction(item) {
+                    if (skip) {
+                        return;
+                    }
+                    if (item.hasQty() && qtyCheck && !self.ResetQty()) {
+                        if ((parseInt(self.Qty()) - parseInt(self.OldQty())) * item.Qty() > item.QtyRmng()) {
+                            item.QtyExceeded(true);
+                            qtyCheck = false;
+                            self.ResetQty(true);
+                        } else if (!item.resetQty() && !self.ResetQty()) {
+                            Visualforce.remoting.Manager.invokeAction(
+                                '{!$RemoteAction.POCPlanningApp.updateTAQuantities}',
+                                item.itemID(), ((parseInt(self.Qty()) || 0) * (parseInt(item.Qty()) || 0)) - ((parseInt(self.OldQty()) || 0) * (parseInt(item.Qty()) || 0)), parent.parent.POCBudgetSummary.IsSpecialty(), window.DistrictID, function(response) {
+                                    if (response.ok) {  
+                                        item.QtyRmng(parseInt(response.valueOne));
+                                        item.QtyExceeded(false);
+                                    } else if (item.QtyExceeded()) {
+                                        item.resetQty(false);
+                                        self.ResetQty(true);
+                                        self.QtyExceeded(true);
+                                        item.QtyRmng(parseInt(response.valueOne));
+                                        qtyCheck = false;
+                                        var oldQty = self.OldQty() || 0;
+                                        self.Qty(oldQty);
+                                        self.OldQty(oldQty)
+                                    } else {
+                                        item.QtyExceeded(true);
+                                        item.resetQty(true);
+                                        self.ResetQty(true);
+                                        self.QtyExceeded(true);
+                                        item.QtyRmng(parseInt(response.valueOne));
+                                        qtyCheck = false;
+                                        var oldQty = self.OldQty() || 0;
+                                        self.Qty(oldQty);
+                                        self.OldQty(oldQty);
+                                    }           
+                                });
+                        } else {
+                            item.resetQty(false);
+                            self.ResetQty(false);
+                        }
+                    }
+                }
+                
+                if (qtyCheck && !self.ResetQty()) {
+                    self.InsertUpdateLogic();
+                    parent.sumProgramItems("All");
+                    self.QtyExceeded(false);
+                    self.ResetQty(false);
+                } else if(!qtyCheck) {
+                    self.QtyExceeded(true);
+                    var oldQty = self.OldQty();
+                    self.Qty(oldQty);
+                    self.OldQty(oldQty);
+                } else {
+                    self.ResetQty(false);
+                }
+            } else if ( regex.test( self.OldQty() ) ) {
+                parent.toggleCustomizableModal(true, '', '{!$Label.Numeric_Value_Only}');
+                var oldValue = self.OldQty();
+                self.Qty(oldValue);
+                self.OldQty(oldValue);
+            } else {
+                parent.toggleCustomizableModal(true, '', '{!$Label.Numeric_Value_Only}');
+                self.Qty(0);
+            }
+        });
+        
+        self.Qty.subscribe(function(OldQty) {
+            var regex = new RegExp('^[0-9]+$');
+            if (regex.test(OldQty)) {
+                self.OldQty(OldQty);
+            }
+        }, null, 'beforeChange');
+        
+        function pad(n) {
+            return (n < 10) ? ("0" + n) : n;
+        }
+        //change logic 
+        self.disableInput = ko.computed(function() {
+            if(typeof parent.ProgramList()[parent.ProgramListIndex()] == "undefined"){
+                return true;
+            } else {
+                return parent.parent.disableAppInput() || 
+                    parent.ProgramList()[parent.ProgramListIndex()].ExecutionStartDateBlank() || 
+                    parent.ProgramList()[parent.ProgramListIndex()].ExecutionEndDateBlank();
+            }
+        });
+        self.newFlagOOHQC = ko.observable(false); //  flag for OOH to check if window is open or closed
+        self.newFlagIHQC = ko.observable(false); // flag for IH to check if window is open or closed
+        self.disableInputOnPlanningDateQuebec = ko.computed(function(){ 
+            var MyDate = new Date().getTime();
+            console.log('self.PlanningStartDate---quebecstart', self.ParentProgram.PlanningStart);
+            console.log('self.PlanningStartDate---quebec', self.ParentProgram.PlanningEnd);
+            console.log('planningDateListTA112working',planningDateListTA);
+            console.log('planningDateListTAIH112',planningDateListTAIH);
+            console.log('MyDate',MyDate);
+            console.log('planinmethod',plan);
+            var planningDateListWithBudgetYearOOH = [];
+            var planningDateListWithBudgetYearIH = [];
+            console.log("### 1 ####");
+            for(var i=0; i<planningDateListTA.length ;i++){
+                if(plan == '{!$Label.Out_of_Home}' && planningDateListTA[i].Budget_Year__c == budgetYear){
+                    planningDateListWithBudgetYearOOH.push(planningDateListTA[i]);
+                }
+            }
+            console.log('planningDateListWithBudgetYearOOH1',planningDateListWithBudgetYearOOH);
+            for(var i=0; i<planningDateListTAIH.length ;i++){
+                if(plan == '{!$Label.In_Home_IH}' && planningDateListTAIH[i].Budget_Year__c == budgetYear){
+                    planningDateListWithBudgetYearIH.push(planningDateListTAIH[i]);
+                }
+            }
+            console.log('planningDateListWithBudgetYearIH1',planningDateListWithBudgetYearIH);
+            if(plan == '{!$Label.Out_of_Home}'){
+                if(planningDateListWithBudgetYearOOH.length > 0 ){
+                    for(var i=0; i<planningDateListWithBudgetYearOOH.length ;i++){
+                        if(approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}' ){
+                            console.log('return false for planning window1');
+                            console.log("### 2 ####");
+                            return true;                            
+                        }else{
+                            //  console.log(new Date(self.ParentProgram.PlanningStartDate()).getTime() <= MyDate);
+                            let toolkitPlanningStartDate = new Date(self.ParentProgram.PlanningStart).getTime()+(22*60*60*1000);
+                            let toolkitPlanningEndDate = new Date(self.ParentProgram.PlanningEnd).getTime()+(22*60*60*1000);
+                            console.log('toolkitPlanningStartDate'+toolkitPlanningStartDate);
+                            if(planningDateListWithBudgetYearOOH[i].Plan_Start_Date__c <= MyDate && MyDate <= planningDateListWithBudgetYearOOH[i].Plan_End_Date__c  
+                               && toolkitPlanningStartDate <= MyDate && toolkitPlanningEndDate >= MyDate ){
+                                console.log('return false for planning window2');
+                                console.log("### 3 ####");
+                                return false;                                
+                            } else{
+                                // flagOOH = true;
+                                self.newFlagOOHQC(true); // new issue
+                            }
+                        } 
+                    }
+                }else{
+                    console.log("### 4 ####");
+                    return true;
+                }
+            }
+            if(self.newFlagOOHQC() == true){
+                console.log("### 5 ####");
+                return true;
+            }
+            if(plan == '{!$Label.In_Home_IH}'){
+                if(planningDateListWithBudgetYearIH.length > 0 ){
+                    console.log('inlength if');
+                    for(var i=0; i<planningDateListWithBudgetYearIH.length ;i++){
+                        if(approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}' ){
+                            console.log('return false for planning window1');
+                            console.log("### 6 ####");
+                            return true;                            
+                        }else{
+                            let toolkitPlanningStartDate = new Date(self.ParentProgram.PlanningStart).getTime()+(22*60*60*1000);
+                            let toolkitPlanningEndDate = new Date(self.ParentProgram.PlanningEnd).getTime()+(22*60*60*1000);
+                            console.log('toolkitPlanningStartDate'+toolkitPlanningStartDate);
+                            if(planningDateListWithBudgetYearOOH[i].Plan_Start_Date__c <= MyDate && MyDate <= planningDateListWithBudgetYearOOH[i].Plan_End_Date__c  
+                               && toolkitPlanningStartDate <= MyDate && toolkitPlanningEndDate >= MyDate ){
+                                console.log('return false for planning window2');
+                                console.log("### 7 ####");
+                                return false;
+                                
+                            } else{
+                                flagIH = true;
+                                self.newFlagIHQC(true);
+                            }
+                        } 
+                    }
+                }else{
+                    console.log('inlength elese');
+                    console.log("### 8 ####");
+                    return true;
+                }
+            }
+            if(self.newFlagIHQC() == true){
+                console.log("### 9 ####");
+                return true;
+            }
+        });
+       
+    }
+    
+    function TAShopItem(i, parent, Type, ParentProgram, ParentKit, Id, Name, KitItemId, SmlImage, LrgImage, Price, MinQty, Qty, QtyRmng, Cancelled, disable, QtyAllocatedToArea, itemID, Description, Size, Dimensions, ItemType, Material){
+        //debugger;
+        var self = this;
+        
+        self.i = ko.observable(i);
+        self.parent = parent;
+        self.ParentProgram = ParentProgram;
+        self.ParentKit = ParentKit;         
+        self.Type = ko.observable(Type);
+        self.ProgramItemId = ko.observable(Id);
+        self.Cancelled = ko.observable(Cancelled);
+        self.itemID = ko.observable(itemID);
+        
+        // Program Item Information
+        self.Name = ko.observable(Name);
+        self.KitItemId = ko.observable(KitItemId);
+        self.SmlImage = ko.observable(SmlImage);
+        self.LrgImage = ko.observable(LrgImage);
+        self.Description = ko.observable(Description);
+        self.Size = ko.observable(Size);
+        self.Price = ko.observable(Price);
+        if (typeof self.Size() == 'undefined') {
+            self.Size(null);
+        }
+        self.Dimensions = ko.observable(Dimensions);
+        if (typeof self.Dimensions() == 'undefined') {
+            self.Dimensions(null);
+        }
+        
+        self.ItemType = ko.observable(ItemType);
+        self.Material = ko.observable(Material);
+        self.itemQuantity = ko.observable(parseInt(Qty) > 0 ? true : false);
+        
+        // Qty Data
+        self.Qty = ko.observable(Qty);
+        self.OldQty = ko.observable(Qty);
+        self.OrgQty = ko.observable(self.Qty());
+        self.QtyExceeded = ko.observable(false);
+        self.QtyAllocatedToArea = ko.observable(QtyAllocatedToArea);
+        self.resetQty = ko.observable(false);
+        
+        // FOR MAXIUMUM QUANTITY
+        self.QtyRmng = ko.observable(QtyRmng);
+        self.hasQty = ko.observable(QtyRmng != null);
+        
+        // FOR MINIMUM QUANTITY
+        self.MinQty = ko.observable(MinQty);    
+        self.hasMinQty = ko.observable(MinQty != null);     
+        self.minQtyError = ko.observable(false);
+        
+        // FUNCTIONS
+        self.Qty.subscribe(function(OldQty) {
+            var regex = new RegExp('^[0-9]+$');
+            if (regex.test(OldQty)) {
+                self.OldQty(OldQty);
+            }
+        }, null, 'beforeChange');
+        
+        self.TotalSpend = ko.computed(function(){
+            console.log('---ina a TA shop item---'+self.Price()+'---qty---'+self.Qty());
+            return self.Price()*self.Qty();
+        });
+        
+        self.isDisabled = ko.observable(function(){
+            var TempBool = (disable||Cancelled);
+            return TempBool;
+        }());
+        
+        self.disableInput = ko.computed(function() {
+            return self.isDisabled() || parent.parent.disableAppInput() || self.ParentProgram.ExecutionStartDateBlank() || self.ParentProgram.ExecutionEndDateBlank();
+            // disbale if planning date black or range of date
+        });
+        
+        self.newFlagOOh = ko.observable(false); //  flag for OOH to check if window is open or closed
+        self.newFlagIH = ko.observable(false); // flag for IH to check if window is open or closed
+        self.disableInputOnPlanningDate = ko.computed(function(){ 
+            var MyDate = new Date().getTime();
+            console.log('self.PlanningStartDate---', self.ParentProgram.PlanningStartDate());
+            console.log('planningDateListTA112working',planningDateListTA);
+            console.log('planningDateListTAIH112',planningDateListTAIH);
+            console.log('MyDate',MyDate);
+            console.log('planinmethod',plan);
+            var planningDateListWithBudgetYearOOH = [];
+            var planningDateListWithBudgetYearIH = [];
+            console.log("### 1 ####");
+            for(var i=0; i<planningDateListTA.length ;i++){
+                if(plan == '{!$Label.Out_of_Home}' && planningDateListTA[i].Budget_Year__c == budgetYear){
+                    planningDateListWithBudgetYearOOH.push(planningDateListTA[i]);
+                }
+            }
+            console.log('planningDateListWithBudgetYearOOH1',planningDateListWithBudgetYearOOH);
+            for(var i=0; i<planningDateListTAIH.length ;i++){
+                if(plan == '{!$Label.In_Home_IH}' && planningDateListTAIH[i].Budget_Year__c == budgetYear){
+                    planningDateListWithBudgetYearIH.push(planningDateListTAIH[i]);
+                }
+            }
+            console.log('planningDateListWithBudgetYearIH1',planningDateListWithBudgetYearIH);
+            if(plan == '{!$Label.Out_of_Home}'){
+                if(planningDateListWithBudgetYearOOH.length > 0 ){
+                    for(var i=0; i<planningDateListWithBudgetYearOOH.length ;i++){
+                        if(approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}' ){
+                            console.log('return false for planning window1');
+                            console.log("### 2 ####");
+                            return true;                            
+                        }else{
+                            let temp = new Date(self.ParentProgram.PlanningStartDate()).getTime();
+                            console.log('tempppp'+temp);
+                            let toolkitPlanningStartDate = new Date(self.ParentProgram.PlanningStartDate()).getTime()+(22*60*60*1000);
+                            let toolkitPlanningEndDate =new Date(self.ParentProgram.PlanningEndDate()).getTime()+(22*60*60*1000);
+                            console.log('toolkitPlanningStartDate'+toolkitPlanningStartDate);
+                            if(planningDateListWithBudgetYearOOH[i].Plan_Start_Date__c <= MyDate && planningDateListWithBudgetYearOOH[i].Plan_End_Date__c >= MyDate
+                               && toolkitPlanningStartDate <= MyDate && toolkitPlanningEndDate >= MyDate){
+                                console.log('return false for planning window2');
+                                console.log("### 3 ####");
+                                return false;                                
+                            } else{
+                                flagOOH = true;
+                                self.newFlagOOh(true); // new issue
+                            }
+                        } 
+                    }
+                }else{
+                    console.log("### 4 ####");
+                    return true;
+                }
+            }
+            if(self.newFlagOOh() == true){
+                console.log("### 5 ####");
+                return true;
+            }
+            if(plan == '{!$Label.In_Home_IH}'){
+                if(planningDateListWithBudgetYearIH.length > 0 ){
+                    console.log('inlength if');
+                    for(var i=0; i<planningDateListWithBudgetYearIH.length ;i++){
+                        if(approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}' ){
+                            console.log('return false for planning window1');
+                            console.log("### 6 ####");
+                            return true;                            
+                        }else{
+                            let toolkitPlanningStartDate = new Date(self.ParentProgram.PlanningStartDate()).getTime()+(22*60*60*1000);
+                            let toolkitPlanningEndDate =new Date(self.ParentProgram.PlanningEndDate()).getTime()+(22*60*60*1000);
+                            if(planningDateListWithBudgetYearIH[i].Plan_Start_Date__c <= MyDate && planningDateListWithBudgetYearIH[i].Plan_End_Date__c >= MyDate 
+                               && toolkitPlanningStartDate <= MyDate && toolkitPlanningEndDate >= MyDate){
+                                console.log('return false for planning window2');
+                                console.log("### 7 ####");
+                                return false;
+                                
+                            } else{
+                                flagIH = true;
+                                self.newFlagIH(true);
+                            }
+                        } 
+                    }
+                }else{
+                    console.log('inlength elese');
+                    console.log("### 8 ####");
+                    return true;
+                }
+            }
+            if(self.newFlagIH() == true){
+                console.log("### 9 ####");
+                return true;
+            }
+        });
+       
+        
+        self.visibilityQtyCheck = ko.computed(function(){
+            var isBackOffice=parent.parent.POCPlanningPOCNavigation.isBackOffice;
+            /* if(typeof parent.ProgramList()[parent.ProgramListIndex()] == "undefined"){ */
+            if(!isBackOffice){
+                if(plan == '{!$Label.Out_of_Home}'){
+                    if(self.newFlagOOh() != true){ //flagOOH != true // new issue
+                        if (approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}'){
+                            console.log("### 10 ####");
+                            return true;
+                        }else{ 
+                            console.log('Quantity in visibility'+parseInt(self.Qty()));
+                            console.log('self.isDisabled() || parent.parent.disableAppInput()'+self.isDisabled() || parent.parent.disableAppInput());
+                            console.log("### 11 ####");
+                            return self.isDisabled() || parent.parent.disableAppInput() ;      
+                        }
+                    }else{
+                        console.log("### 12 ####");
+                        return true;
+                    }
+                }
+                if(plan == '{!$Label.In_Home_IH}'){
+                    if(self.newFlagIH() != true){
+                        if (approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}'){
+                            console.log("### 13 ####");
+                            return true;
+                        }else{ 
+                            console.log("### 14 ####");
+                            return self.isDisabled() || parent.parent.disableAppInput() ;      
+                        }
+                    }else{
+                        console.log("### 15 ####");
+                        return true;
+                    }
+                }
+            }
+            else {
+                return  self.disableInputOnPlanningDate();
+            }   
+            
+         });
+        
+        self.promotionalQtyCheck = ko.computed(function(){
+            var isBackOffice=parent.parent.POCPlanningPOCNavigation.isBackOffice;
+            if(!isBackOffice){
+                if(plan == '{!$Label.Out_of_Home}'){
+                    if(self.newFlagOOh() != true){ //flagOOH != true
+                        if (approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}'){
+                            return true;
+                        }else{          
+                            return self.visibilityQtyCheck() ;      
+                        }
+                    }else{
+                        return true;
+                    }
+                }
+                if(plan == '{!$Label.In_Home_IH}'){
+                    if(self.newFlagIH() != true){
+                        if (approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}'){
+                            return true;
+                        }else{          
+                            return self.visibilityQtyCheck() ;      
+                        }
+                    }else{
+                        return true;
+                    }
+                }
+            }
+            else {
+                return  self.disableInputOnPlanningDate();
+            }   
+            
+            //return self.isDisabled() || parent.parent.disableAppInput() ;
+        });
+        
+        
+        self.Qty.subscribe(function() {
+            var regex = new RegExp('^[0-9]+$');
+            if ( regex.test( self.Qty() ) ) {
+                if (!self.itemQuantity() && parseInt(self.Qty()) > 0) {
+                    self.itemQuantity(true);
+                    self.ParentProgram[self.Type() + "ItemCount"](self.ParentProgram[self.Type() + "ItemCount"]() + 1);
+                } else if (self.itemQuantity() && parseInt(self.Qty()) == 0) {
+                    self.itemQuantity(false);
+                    self.ParentProgram[self.Type() + "ItemCount"](self.ParentProgram[self.Type() + "ItemCount"]() - 1);
+                }
+                
+                if (!self.ParentProgram.hasMinQty()) {
+                    if (!parent.initialLoad) {
+                        self.startDataRollup();
+                    }
+                    
+                } else if (self.ParentProgram.hasMinQty() && !self.hasMinQty() && parseInt(self.Qty()) == 0) {
+                    if (!parent.initialLoad) {
+                        self.startDataRollup();
+                    }
+                } else if (self.ParentProgram.hasMinQty() && !self.hasMinQty() && parseInt(self.Qty()) > 0) {
+                    if(typeof parent.ProgramList()[parent.ProgramListIndex()].KitId() == "undefined" || parent.ProgramList()[parent.ProgramListIndex()].KitId() == null) {                            
+                        parent.ProgramList()[parent.ProgramListIndex()].createTAKit(self, parent, 'Custom', undefined, true);   
+                    } else if (!self.ParentProgram.setMinQty()) {                            
+                        self.minQtyError(true)
+                        self.runMassUpdateForMinQty();
+                    } else if (!parent.initialLoad) {
+                        self.startDataRollup();
+                    }
+                    
+                } else if (self.ParentProgram.hasMinQty() && self.hasMinQty()) {
+                    //console.log('===self.ParentProgram.hasMinQty()@@',self.ParentProgram.hasMinQty());
+                    //console.log('===self.hasMinQty()@@',self.hasMinQty());
+                    if (parseInt(self.Qty()) == 0) {
+                        if (self.ParentProgram.PromotionalItemCount() == 0 && self.ParentProgram.VisibilityItemCount() == 0 && self.ParentProgram.DriverItemCount() == 0 && !parent.initialLoad) {
+                            self.startDataRollup();
+                        } else if (!parent.intialLoad) {
+                            if (self.OldQty() <= self.MinQty()) {
+                                self.Qty(self.OldQty());
+                            } else {
+                                self.Qty(self.MinQty());
+                            }
+                            // FIRE MODAL TO EXPLAIN ITS BEEN FLIPPED BACK
+                            var Title = self.Name() + ' min qty';
+                            var Body = "{!$Label.Qty_Under_Min_Qty_Message}";
+                            parent.parent.loadDialog(Title, Body);
+                            $('#modalGeneric').modal();
+                        }
+                        
+                    } else if (parseInt(self.Qty()) >= parseInt(self.MinQty())) {
+                        if (!parent.initialLoad) {
+                            self.startDataRollup();
+                        }
+                    } else if (parseInt(self.Qty()) < parseInt(self.MinQty())) {
+                        if (self.OldQty() <= self.MinQty()) {
+                            self.Qty(self.OldQty());
+                        } else {
+                            self.Qty(self.MinQty());
+                        }
+                        // FIRE MODAL TO EXPLAIN WHY ITS BEEN FLIPPED BACK
+                        parent.toggleCustomizableModal(true, self.Name()  + ' min qty', '{!$Label.Qty_Under_Min_Qty_Message}');
+                    }
+                }
+            } else if ( regex.test( self.OldQty() ) ) {
+                parent.toggleCustomizableModal(true, '{!$Label.Numeric_Value_Only}', '');
+                var oldValue = self.OldQty();
+                self.Qty(oldValue);
+                self.OldQty(oldValue);
+            } else {
+                parent.toggleCustomizableModal(true, '{!$Label.Numeric_Value_Only}', '');
+                self.Qty(0);
+            }
+        });
+        
+        self.runMassUpdateForMinQty = function() { 
+            var minQtyItemsFound = false;
+            self.ParentProgram.DriverList().forEach(function(Driver, i) {
+                setTimeout(function() {
+                    if (parseInt(Driver.MinQty()) > 0 && Driver.Qty() != Driver.MinQty()) {
+                        Driver.Qty(Driver.MinQty());
+                        minQtyItemsFound = true;
+                    }
+                    
+                    if (Driver.i() == self.i()) {
+                        self.startDataRollup();
+                    }
+                    
+                    if (i === self.ParentProgram.DriverList().length - 1) {
+                        self.ParentProgram.setMinQty(true);
+                    }
+                }, 1);
+            });
+        };
+        
+        self.startDataRollup = function() {
+            if (self.hasQty() && self.Qty() - self.OldQty() > self.QtyRmng()) {
+                self.QtyExceeded(true);
+                self.resetQty(true);
+                if (self.OldQty() > self.QtyRmng) {
+                    self.Qty(self.OldQty() + ( self.OldQty() - self.QtyRmng ) );
+                } else {
+                    self.Qty(self.OldQty());
+                }
+            } else if (!self.resetQty()) {
+                if (self.hasQty()) {
+                    POCPlanningApp.updateTAQuantities(self.itemID(), parseInt(self.Qty()) - parseInt(self.OldQty()), parent.parent.POCBudgetSummary.IsSpecialty(), window.DistrictID, function(response) {
+                        if (response.ok) {  
+                            self.QtyRmng(parseInt(response.valueOne));
+                            self.beginAddingUpData();
+                        } else if (self.QtyExceeded()) {
+                            self.resetQty(false);
+                            self.QtyRmng(parseInt(response.valueOne));
+                            self.Qty(parseInt(response.valueOne));                              
+                        } else {
+                            self.QtyExceeded(true);
+                            self.resetQty(true);
+                            self.QtyRmng(parseInt(response.valueOne));
+                            if (self.OldQty() > self.QtyRmng) {
+                                self.Qty(self.OldQty() + ( self.OldQty() - self.QtyRmng ) );
+                            } else {
+                                self.Qty(self.OldQty());
+                            }
+                        }           
+                    });
+                } else {
+                    self.beginAddingUpData();
+                }
+            } else {
+                self.resetQty(false);
+            }               
+        }
+        
+        self.createTAKitItem = function() {
+            POCPlanningApp.CreateTAKitItem(
+                parent.ProgramList()[parent.ProgramListIndex()].KitId(), 
+                self.ProgramItemId(), 
+                self.Qty(), 
+                function(result, event){
+                    self.KitItemId(result);
+                }
+            );
+        }
+        
+        self.beginAddingUpData = function() {
+            self.QtyExceeded(false);
+            
+            if (!parent.parent.POCBudgetSummary.BudgetSummary.NeverApproved()) {
+                if(typeof parent.parent.POCPlanningDashboard == "undefined"){
+                    POCPlanningApp.setAnnuaLPOCBudgetPlanToUpdated(parent.parent.UrlParameters.POCId, function() {});
+                } else{
+                    parent.parent.POCPlanningDashboard.territoryPOCList()[parent.parent.POCListIndex].IsUpdated(true);
+                }                       
+            }
+            
+            //If number of Items Meet the Required Quota
+            if(function(){
+                var Dependent;                  
+                if(self.Type() == "Driver"){
+                    Dependent = "Visibility";
+                    
+                } else if(self.Type() == "Visibility"){
+                    Dependent = "Promotional";
+                } else {
+                    return true;
+                }
+                
+                //Quota meet
+                if(!self.ParentProgram[Dependent + "ItemDisable"]()){
+                    return true;
+                } 
+                //Quota not meet
+                else {
+                    //No Dependent Items
+                    if(self.ParentProgram[Dependent + "ItemCount"]() == 0){
+                        return true;
+                    }
+                    //Dependent Items exist without the needed Pre-Reqs
+                    else {
+                        self.ParentProgram[Dependent + "ItemDisable"](false);
+                        self.Qty(self.OrgQty());
+                        return false;
+                    }
+                }                   
+            }())
+            {
+                //If KitItem Exist
+                parent.sumProgramItems(self.Type());
+                if(typeof self.KitItemId() != "undefined"){                 
+                    POCPlanningApp.UpdateTAKitItem(self.KitItemId(), self.Qty(), function(result, event){
+                        
+                    });
+                } else{
+                    //If Kit exist
+                    if(typeof parent.ProgramList()[parent.ProgramListIndex()].KitId() != "undefined"){
+                        self.createTAKitItem();
+                    } else {    
+                        parent.ProgramList()[parent.ProgramListIndex()].createTAKit(self, parent, 'Custom', undefined, false);                      
+                    }
+                }
+            }
+            self.OrgQty(self.Qty());
+        }
+    }
+    </script>
+    
+    <div class="POCPlanningTradeActivation" id="POCPlanningTradeActivationId">      
+        <div data-bind="template: { foreach: BrandList }" class= "BrandProgramNav row" id="BrandProgramNav">
+            <div data-bind="click: $parent.loadBrandPrograms.bind($data, i()), style: {'background-color': selected() ? $parent.HexColor() == null ? 'rgb(2, 16, 64)' : $parent.HexColor() : '#bbbdbf'}" class="BrandNav">
+                <div data-bind="html: Name"/>
+                <div>
+                    $<span data-bind="text: setupNumbers(TotalSpend())"/>
+                </div>
+            </div>          
+        </div>
+        
+        <div class="row" style="padding-top: 30px">
+            <div class = "ProgramNav col-sm-2 col-md-2 sidebar" id="ProgramNav">
+                <ul data-bind="template: { foreach: ProgramList }" class="nav nav-sidebar">
+                    <li data-bind="click: $parent.loadProgramItems.bind($data, i()), style: {'background-color': selected() ? $parent.HexColor() == null ? 'rgb(2, 16, 64)' : $parent.HexColor() : '#f4f4f4', color: selected() ? '#ffffff' : '#000000'}">
+                        <span data-bind="html: Name"/> - $<span data-bind="text: setupNumbers(TotalSpend())"/>
+                    </li>
+                    
+                </ul>
+            </div>
+            
+            <div class="ProgramShop col-sm-10 col-md-10 main" id="ProgramShop">
+                <div class="ProgramExecution row">
+                    <!--     <div class="col-sm-3 col-md-3">
+<div class="ProgramTitle">
+{!$Label.Program_Start_and_End_Dates}
+</div>
+<div style="padding: 5px 0">
+<span data-bind="text: displayMonth(ProgramDetails.ProgramStartDate())"/> - <span data-bind="text: displayMonth(ProgramDetails.ProgramEndDate())"/>
+</div>
+</div>  -->
+                    <div class="col-sm-3 col-md-3">
+                        <div class="ProgramTitle">
+                            Program Start and End Date
+                        </div>
+                        <div style="padding: 5px 0">
+                            <span data-bind="text: (ProgramDetails.ProgramStartDate())"/> - <span data-bind="text: (ProgramDetails.ProgramEndDate())"/>
+                        </div>
+                    </div>
+                    <!--comment here 
+                    <div class="col-sm-3 col-md-3">
+                        <div class="ProgramTitle">
+                            Planning Start and End Date
+                        </div>
+                        <div style="padding: 5px 0">
+                            <span data-bind="text: (ProgramDetails.PlanningStartDate())"/> - <span data-bind="text: (ProgramDetails.PlanningEndDate())"/>
+                        </div>
+                    </div> -->
+                    
+                    <!--   <div class="col-sm-5 col-md-6 col-lg-5">
+<div class="ProgramTitle">
+{!$Label.Program_Execution_Date_Range}
+</div>
+<input data-bind="value: ProgramDetails.ExecutionStartDate || null, year: parent.UrlParameters.Year, programStart: ProgramDetails.ProgramStartDate, programEnd: ProgramDetails.ProgramEndDate, language: parent.ThisUser.LanguageLocaleKey(), attr: {disabled: parent.disableAppInput()}, pickadate: {editable: true }" class="datepicker" id="ExecutionStartDate" style="display: inline-block; padding: 6px 4px 4px 4px; width: 140px; z-index: 1; position: relative; background: transparent"/>
+<i class="fa fa-calendar" aria-hidden="true" style="font-size: 140%; padding: 0; margin: 0 25px 0 -30px; z-index -1"></i>
+<input data-bind="value: ProgramDetails.ExecutionEndDate || null, year: parent.UrlParameters.Year, programStart: ProgramDetails.ProgramStartDate, programEnd: ProgramDetails.ProgramEndDate, language: parent.ThisUser.LanguageLocaleKey(), attr: {disabled: parent.disableAppInput()}, pickadate: {editable: true }" class="datepicker" id="ExecutionEndDate" style="display: inline-block; padding: 6px 4px 4px 4px; width: 140px; z-index: 1; position: relative; background: transparent"/>
+<i class="fa fa-calendar" aria-hidden="true" style="font-size: 140%; padding: 0; margin: 0 0 0 -30px; z-index: -1"></i> 
+
+</div> -->
+                    <div class= "col-sm-4 col-md-3 col-lg-4">
+                        <div class="ProgramInformation">
+                            <span class="ProgramTitle" style="padding-left: 5px;">
+                                {!$Label.Program_Information}
+                            </span>
+                            <i data-bind="click: toggleProgramInformation(true)" class="fa fa-file-text-o" style="cursor: pointer" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="alerts" style="margin-top: 15px; margin-bottom: -20px;">
+                    <!--   <div class="alert alert-info" role="alert" data-bind="visible: ProgramDetails.ExecutionStartDateBlank || ProgramDetails.ExecutionEndDateBlank">{!$Label.Execution_Range_Required}</div>
+<div class="alert alert-danger" role="alert" data-bind="visible: ProgramDetails.dateOutOfRange">{!$Label.Date_Range_Exceeded_Message}.</div> -->
+                    <div class="alert alert-warning" role="alert" data-bind="visible: !isQuebec() && (ProgramList()[ProgramListIndex()] != undefined ? ProgramList()[ProgramListIndex()].hasMinQty() : false)">{!$Label.Min_Qty_Program_Message}</div>
+                </div>
+                <div data-bind="style: {display: isQuebec() ? 'none': 'block'}">
+                    <div class ="ProgramDriver row" style="padding-left: 0; padding-bottom: 0;">
+                        <div style="border-left: 10px solid #00A388; padding-left: 15px; padding-bottom: 15px;">
+                            <span class="ProgramTitle" style="color: #00A388">
+                                {!$Label.Program_Driver}: 
+                            </span>
+                            <span>
+                                <span data-bind="text: inputValueIntoLabel(KitThreshold.Driver, '{!$Label.Kit_Threshold_Driver_Message}')"/>
+                            </span>
+                        </div>
+                    </div>
+                    <div data-bind="template: { foreach: DriverList }" class="row" style="border-left: 10px solid #00A388; padding-left: 5px;">
+                        <div class="col-sm-6 col-md-4 POCPlanningItemContainer">
+                            <div class="POCPlanningItem">
+                                <div class="POCPlanningItemImage">
+                                    <img class="POCPlanningItemImageSm" data-bind="attr: {src: SmlImage, alt: parent.parent.htmlEnDeCode.htmlDecode(Name())}, click: parent.toggleImage(true, '', i(), Type())"/>
+                                </div>
+                                <div class="POCPlanningItemDesc">
+                                    <div class="ItemDetail">
+                                        {!$Label.Name}:
+                                        <span data-bind="html: Name"/> <span data-bind="visible: hasMinQty" class="label label-info" style="position: absolute; left: 3px; top: 1px;">Min Qty</span>
+                                    </div>
+                                    <div class="ItemDescription">
+                                        {!$Label.Description}:
+                                        <span data-bind="html: Description"/>
+                                    </div>
+                                    <div class="ItemDetail">
+                                        {!$Label.Type}:
+                                        <span data-bind="html: ItemType"/>
+                                    </div>
+                                    <div class="ItemDetail">
+                                        {!$Label.Size}:
+                                        <span data-bind="html: Size() != null ? Size() : 'N/A'" />
+                                    </div>
+                                    <div class="ItemDetail">
+                                        {!$Label.Material}:
+                                        <span data-bind="html: Material" />
+                                    </div>
+                                    <div class="ItemDetail">
+                                        {!$Label.Price}:
+                                        $<span data-bind="text: setupNumbers(Price())"/>
+                                    </div>
+                                    <div>
+                                        Qty:
+                                        <input data-bind="value: Qty, attr: {disabled: disableInputOnPlanningDate}" type="text"/>   
+                                        <span data-bind="visible: hasQty, style: { fontWeight: '900' }">
+                                            <span data-bind="text: setupNumbers(QtyRmng())" /> {!$Label.of}
+                                            <span data-bind="text: setupNumbers(QtyAllocatedToArea())" /> {!$Label.remaining}.
+                                        </span>
+                                        <span data-bind="visible: hasMinQty">
+                                            (Min Qty: <span data-bind="text: MinQty"></span>)
+                                        </span>
+                                    </div>
+                                    <div data-bind="visible: QtyExceeded"><span style="color: red" data-bind="text: '{!$Label.Qty_Exceeded_Message}'"/></div>
+                                    <div data-bind="style: {display: Cancelled() ? 'block' : 'none'}">
+                                        {!$Label.Item_Cancelled}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class = "ProgramVisibility row" style="padding-left: 0; padding-bottom: 0;">
+                        <div style="border-left: 10px solid #3498DB; padding-left: 15px; padding-bottom: 15px;">
+                            <span class="ProgramTitle" style="color: #3498DB">
+                                {!$Label.Program_Visibility}: 
+                            </span>
+                            <span>
+                                <span data-bind="text: inputValueIntoLabel(KitThreshold.Visibility, '{!$Label.Kit_Threshold_Visibility_Message}')"/>
+                            </span>
+                        </div>
+                    </div>
+                    <div data-bind="template: { foreach: VisibilityList }" class="row" style="border-left: 10px solid #3498DB; padding-left: 5px;">
+                        
+                        <div class="col-sm-6 col-md-4 POCPlanningItemContainer">
+                            <div class="POCPlanningItem">
+                                <div class="POCPlanningItemImage">
+                                    <img class="POCPlanningItemImageSm" data-bind="attr: {src: SmlImage, alt: parent.parent.htmlEnDeCode.htmlDecode(Name())}, click: parent.toggleImage(true, '', i(), Type())"/>
+                                </div>
+                                <div class="POCPlanningItemDesc">
+                                    <div class="ItemDetail">
+                                        {!$Label.Name}:
+                                        <span data-bind="html: Name"/>
+                                    </div>
+                                    <div class="ItemDescription">
+                                        {!$Label.Description}:
+                                        <span data-bind="html: Description"/>
+                                    </div>
+                                    <div class="ItemDetail">
+                                        {!$Label.Type}:
+                                        <span data-bind="html: ItemType"/>
+                                    </div>
+                                    <div class="ItemDetail">
+                                        {!$Label.Size}:
+                                        <span data-bind="html: Size() != null ? Size() : 'N/A'"/>
+                                    </div>
+                                    <div class="ItemDetail">
+                                        {!$Label.Material}:
+                                        <span data-bind="html: Material"/>
+                                    </div>
+                                    <div class="ItemDetail">
+                                        {!$Label.Price}:
+                                        $<span data-bind="text: setupNumbers(Price())"/>
+                                    </div>
+                                    <div>
+                                        Qty:
+                                        <input data-bind="value: Qty, attr: {disabled: visibilityQtyCheck}" type="text"/> <!-- Kaustav -->
+                                        <span data-bind="visible: hasQty, style: { fontWeight: '900' }">
+                                            <span data-bind="text: setupNumbers(QtyRmng())" /> {!$Label.of}
+                                            <span data-bind="text: setupNumbers(QtyAllocatedToArea())" /> {!$Label.remaining}.
+                                        </span>
+                                    </div>
+                                    <div data-bind="visible: QtyExceeded"><span style="color: red" data-bind="text: '{!$Label.Qty_Exceeded_Message}'"/></div>
+                                    <div data-bind="style: {display: Cancelled() ? 'block' : 'none'}">
+                                        {!$Label.Item_Cancelled}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    <div class="ProgramPromotional row" style="padding-left: 0; padding-bottom: 0;">
+                        <div style="border-left: 10px solid #413659; padding-left: 15px; padding-bottom: 15px;">
+                            <span class="ProgramTitle" style="color: #413659">
+                                {!$Label.Program_Promotional}
+                            </span>
+                            <span>
+                            </span>
+                        </div>
+                    </div>
+                    <div data-bind="template: { foreach: PromotionalList }" class="row"  style="border-left: 10px solid #413659; padding-left: 5px;">
+                        <div class="col-sm-6 col-md-4 POCPlanningItemContainer">
+                            <div class="POCPlanningItem">
+                                <div class="POCPlanningItemImage">
+                                    <img class="POCPlanningItemImageSm" data-bind="attr: {src: SmlImage, alt: parent.parent.htmlEnDeCode.htmlDecode(Name())}, click: parent.toggleImage(true, '', i(), Type())"/>
+                                </div>
+                                <div class="POCPlanningItemDesc">
+                                    <div class="ItemDetail">
+                                        {!$Label.Name}:
+                                        <span data-bind="html: Name"/>
+                                    </div>
+                                    <div class="ItemDescription">
+                                        {!$Label.Description}:
+                                        <span data-bind="html: Description"/>
+                                    </div>
+                                    <div class="ItemDetail">
+                                        {!$Label.Type}:
+                                        <span data-bind="html: ItemType"/>
+                                    </div>
+                                    <div class="ItemDetail">
+                                        {!$Label.Size}:
+                                        <span data-bind="html: Size() != null ? Size() : 'N/A'"/>
+                                    </div>
+                                    <div class="ItemDetail">
+                                        {!$Label.Material}:
+                                        <span data-bind="html: Material"/>
+                                    </div>
+                                    <div class="ItemDetail">
+                                        {!$Label.Price}:
+                                        $<span data-bind="text: setupNumbers(Price())"/>
+                                    </div>
+                                    <div>
+                                        Qty:
+                                        <input data-bind="value: Qty, attr: {disabled: promotionalQtyCheck }" type="text"/> <!-- Kaustav -->
+                                        <span data-bind="visible: hasQty, style: { fontWeight: '900' }">
+                                            <span data-bind="text: setupNumbers(QtyRmng())" /> {!$Label.of}
+                                            <span data-bind="text: setupNumbers(QtyAllocatedToArea())" /> {!$Label.remaining}.
+                                        </span>                                 
+                                    </div>
+                                    <div data-bind="visible: QtyExceeded"><span style="color: red" data-bind="text: '{!$Label.Qty_Exceeded_Message}'"/></div>
+                                    <div data-bind="style: {display: Cancelled() ? 'block' : 'none'}">
+                                        {!$Label.Item_Cancelled}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                <div data-bind="style: {display: !isQuebec() ? 'none': 'block'}">
+                    <div data-bind="foreach: KitList" >                 
+                        <div  class = "ProgramKit row">
+                            <span class="ProgramTitle" style="padding-right: 5px">
+                                <span data-bind="html: Name" />: $<span data-bind="text: setupNumbers(TotalSpend())"/>
+                            </span>
+                            <input data-bind="value: Qty, attr: {disabled: disableInputOnPlanningDateQuebec}" type="text"/> <span style="color: red; padding-left: 5px;" data-bind="visible: QtyExceeded"><span data-bind="text: '{!$Label.Qty_Exceeded_Message}'"></span></span>
+                        </div>
+                        <div class="row">
+                            <div data-bind="foreach: DriverList">
+                                <div class="col-sm-6 col-md-4 POCPlanningItemContainer">
+                                    <div class="POCPlanningItem">
+                                        <div class="POCPlanningItemImage">
+                                            <img class="POCPlanningItemImageSm" data-bind="attr: {src: SmlImage, alt: parent.parent.htmlEnDeCode.htmlDecode(Name())}, click: parent.toggleImage(true, ParentKit.i(), i(), Type())"/>
+                                        </div>
+                                        <div class="POCPlanningItemDesc">
+                                            <div class="ItemDetail">
+                                                {!$Label.Name}:
+                                                <span data-bind="html: Name"/>
+                                            </div>
+                                            <div class="ItemDetail">
+                                                {!$Label.Classification}:
+                                                <span data-bind="html: Type"/>
+                                            </div>
+                                            <div class="ItemDescription">
+                                                {!$Label.Description}:
+                                                <span data-bind="html: Description"/>
+                                            </div>
+                                            <div class="ItemDetail">
+                                                {!$Label.Type}:
+                                                <span data-bind="html: ItemType"/>
+                                            </div>
+                                            <div class="ItemDetail">
+                                                {!$Label.Size}:
+                                                <span data-bind="html: Size() != null ? Size() : 'N/A'"/>
+                                            </div>
+                                            <div class="ItemDetail">
+                                                {!$Label.Material}:
+                                                <span data-bind="html: Material"/>
+                                            </div>
+                                            <div>
+                                                Qty:
+                                                <span data-bind="text: Qty"/>
+                                            </div>
+                                            <div data-bind="visible: QtyExceeded"><span style="color: red" data-bind="text: '{!$Label.Qty_Exceeded_Message}'"/></div>
+                                            <div data-bind="visible: hasQty, style: { fontWeight: '900' }">
+                                                <span data-bind="text: setupNumbers(QtyRmng())" /> {!$Label.of}
+                                                <span data-bind="text: setupNumbers(QtyAllocatedToArea())" /> {!$Label.remaining}.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div data-bind="foreach: VisibilityList">
+                                <div class="col-sm-6 col-md-4 POCPlanningItemContainer">
+                                    <div class="POCPlanningItem">
+                                        <div class="POCPlanningItemImage">
+                                            <img class="POCPlanningItemImageSm" data-bind="attr: {src: SmlImage, alt: parent.parent.htmlEnDeCode.htmlDecode(Name())}, click: parent.toggleImage(true, ParentKit.i(), i(), Type())"/>
+                                        </div>
+                                        <div class="POCPlanningItemDesc">
+                                            <div class="ItemDetail">
+                                                {!$Label.Name}:
+                                                <span data-bind="html: Name"/>
+                                            </div>
+                                            <div class="ItemDetail">
+                                                {!$Label.Classification}:
+                                                <span data-bind="html: Type"/>
+                                            </div>
+                                            <div class="ItemDescription">
+                                                {!$Label.Description}:
+                                                <span data-bind="html: Description"/>
+                                            </div>
+                                            <div class="ItemDetail">
+                                                {!$Label.Type}:
+                                                <span data-bind="html: ItemType"/>
+                                            </div>
+                                            <div class="ItemDetail">
+                                                {!$Label.Size}:
+                                                <span data-bind="html: Size() != null ? Size() : 'N/A'"/>
+                                            </div>
+                                            <div class="ItemDetail">
+                                                {!$Label.Material}:
+                                                <span data-bind="html: Material"/>
+                                            </div>
+                                            <div>
+                                                Qty:
+                                                <span data-bind="text: Qty"/>
+                                            </div>
+                                            <div data-bind="visible: QtyExceeded"><span style="color: red" data-bind="text: '{!$Label.Qty_Exceeded_Message}'"/></div>
+                                            <div data-bind="visible: hasQty, style: { fontWeight: '900' }">
+                                                <span data-bind="text: setupNumbers(QtyRmng())" /> {!$Label.of}
+                                                <span data-bind="text: setupNumbers(QtyAllocatedToArea())" /> {!$Label.remaining}.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div data-bind="foreach: PromotionalList">
+                                <div class="col-sm-6 col-md-4 POCPlanningItemContainer">
+                                    <div class="POCPlanningItem">
+                                        <div class="POCPlanningItemImage">
+                                            <img class="POCPlanningItemImageSm" data-bind="attr: {src: SmlImage, alt: parent.parent.htmlEnDeCode.htmlDecode(Name())}, click: parent.toggleImage(true, ParentKit.i(), i(), Type())"/>
+                                        </div>
+                                        <div class="POCPlanningItemDesc">
+                                            <div class="ItemDetail">
+                                                {!$Label.Name}:
+                                                <span data-bind="html: Name"/>
+                                            </div>                                          
+                                            <div class="ItemDetail">
+                                                {!$Label.Classification}:
+                                                <span data-bind="html: Type"/>
+                                            </div>
+                                            <div class="ItemDescription">
+                                                {!$Label.Description}:
+                                                <span data-bind="html: Description"/>
+                                            </div>                                          
+                                            <div class="ItemDetail">
+                                                {!$Label.Type}:
+                                                <span data-bind="html: ItemType"/>
+                                            </div>
+                                            <div class="ItemDetail">
+                                                {!$Label.Size}: 
+                                                <span data-bind="html: Size() != null ? Size() : 'N/A'"/>
+                                            </div>
+                                            <div class="ItemDetail">
+                                                {!$Label.Material}:
+                                                <span data-bind="html: Material"/>
+                                            </div>
+                                            <div>
+                                                Qty:
+                                                <span data-bind="text: Qty"/>
+                                            </div>
+                                            <div data-bind="visible: QtyExceeded"><span style="color: red" data-bind="text: '{!$Label.Qty_Exceeded_Message}'"/></div>
+                                            <div data-bind="visible: hasQty, style: { fontWeight: '900' }">
+                                                <span data-bind="text: setupNumbers(QtyRmng())" /> {!$Label.of}
+                                                <span data-bind="text: setupNumbers(QtyAllocatedToArea())" /> {!$Label.remaining}.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</apex:page>

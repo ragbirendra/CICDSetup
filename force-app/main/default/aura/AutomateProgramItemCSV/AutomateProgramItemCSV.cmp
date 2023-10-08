@@ -1,0 +1,110 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,lightning:isUrlAddressable" access="global" 
+                controller="GenericDataStampingApex" >
+    
+    <aura:attribute name="previewData" type="String[]" description="data to render in table"/>
+    <aura:attribute name="headerData" type="String[]" description="attribute to show table header" />
+    <aura:attribute name="isLoading" type="Boolean" default="false" />
+    <aura:attribute name="enableInfiniteLoading" type="Boolean" default="true" />
+    <aura:attribute name="colWidth" type="Integer" default="90" />
+    <aura:attribute name="loadMoreOffset" type="Integer" default="5"/>
+    <aura:attribute name="loadMoreStatus" type="String" default="" />
+    <aura:attribute name="totalDataSet" type="String[]" description="all the rows in the file" />
+    <aura:attribute name="doShowModal"  type="Boolean" description="whether to show image modal" default="false" />    
+    <aura:attribute name="totalRowsToLoad" type="Integer" default="0" />
+    <aura:attribute name="totalRowsLoaded" type="Integer" default="0" />
+    <aura:attribute name="showButton" type="Boolean" default="false" />
+    <aura:attribute name="enableSave" type="Boolean" default="true" />
+    <aura:attribute name="fileName" type="String" default='No File Selected'/> 
+    <aura:attribute name="pageReference" type="Object"/>
+    <aura:attribute name="url" type="String"/>
+    <lightning:navigation aura:id="navService"/>
+    <aura:attribute name="msgToPass" type="String[]"   />
+    <aura:attribute name="openModal" type="Boolean" default="false" /> 
+    <aura:attribute name="noLoad" type="Boolean" default="true" /> 
+    <aura:attribute name="showTable" type="Boolean" default="true" /> 
+    
+    <aura:if isTrue="{!v.isLoading}">
+        <lightning:spinner variant="brand"
+                           aura:id="lightSpin" class="lightSpin"  size="large" alternativeText="Loading More Data..."/> 
+        
+        <p style="width: 100%;text-align: center;font-weight: bold;top: 11em;position: relative;left: 0px;width: 100vw;" > Please wait while we Load data for you! </p>
+        
+    </aura:if>
+    
+    <aura:if isTrue="{!v.openModal}">
+        <c:ModalPopup msgToPass="{!v.msgToPass}" openModal="{!v.openModal}" isMsgFromAutomationPage="false"/>
+    </aura:if>
+    <div >
+        <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_warning" role="alert" style="margin: 3px;">
+            <h2>
+                Step 1 – Load images by clicking
+                <a href="{!$Label.c.ABI_OP_URL +'/lightning/o/ContentDocument/home'}" target="_blank">Go To Library </a>Link.
+                Navigate to the <b>POC Planning Image Setup</b> Library Folder
+            </h2>
+        </div>
+        <!--<div class="slds-horizontal-medium slds-size-1-of-1" id="filterCriteriaDiv" > add one one hyphen each to class name-->
+        <div class="slds-box" style="padding-bottom:1px;">
+            <!--<div class="slds-grid" >   -->          
+            <lightning:layout multipleRows="true" verticalAlign="center">
+                <lightning:layoutItem size="6" >
+                    <lightning:input name="csvFileElem" type="file" label="Upload Item CSV" 
+                                     multiple="true" accept=".csv" onchange="{! c.handleFilesChange }"/>        
+                    <div class="slds-form-element" >
+                        <div class="slds-text-body_small slds-text-color_error" id="fileContainer"> {!v.fileName} </div>  
+                    </div>
+                </lightning:layoutItem>
+                
+                <lightning:layoutItem size="6" alignmentBump="left">
+                    <lightning:button variant="brand" label="Export template" title="Export template" onclick="{!c.downloadCsv}"/>
+                    
+                    <lightning:button variant="brand" label="Go to:POC Planning Program Item Staging" title="Go to:POC Planning Program Item Staging" onclick="{!c.previewRecords}"/>
+                </lightning:layoutItem>
+                <!--</div>-->
+            </lightning:layout>
+            <!--</div>-->
+        </div>
+        <!--</div>-->
+    </div>
+    <br/>
+    <!-- button -->
+    <span style="font-style: italic; color: red; font-size: 13px;"> <a href="{!$Label.c.ABI_OP_ProductCCFile}" target="_blank">Click Here</a> to download Product And Product Type Sample excel sheet.</span><br/>
+    <span style="font-style: italic; color: red; font-size: 13px;">*Please make sure the data file does not have any Commas and Double Quotes included.</span><br/>
+    <span style="font-style: italic; color: red; font-size: 13px;">*Values for isUserPaid/Atlantic/West/Quebec/Ontario can only be YES Or NO</span>
+    
+    <div style="overflow: hidden;">
+        <div class="slds-horizontal--medium slds-size--1-of-1" id="filterCriteriaDiv" >
+            
+            <div class="slds-grid slds-float_left" > 
+                <aura:if isTrue="{!v.showButton}" >
+                    
+                    <lightning:button variant="brand" label="Validate Data " title="Validate Data" disabled="{!v.flag}" onclick="{! c.ValidateRecords }"/>
+                    <lightning:button variant="brand" label="Save Data " title="Save Data" disabled="{!v.enableSave}" onclick="{! c.onSave }"/>
+                    <lightning:button variant="brand" label="Clear Data " title="Clear Data" onclick="{!c.clear }"/>
+                    
+                </aura:if>
+            </div>
+        </div>
+    </div>
+    
+    <br/>
+    <!-- MODAL ENDS--> 
+    
+    
+    <span style="color:green"><b>Total Rows Loaded: {!v.totalRowsLoaded} || Total Rows to Load: {!v.totalRowsToLoad}</b></span>
+    <div aura:id="tableCont" style="height: 500px;overflow-x:auto;" class="slds-scrollable_y slds-scrollable_x">  
+        
+        <div aura:id="dataTablediv" class="slds-scrollable" style="height:80%; width: 100%">
+            <lightning:datatable keyField="keyAttr" 
+                                 data="{! v.previewData }"
+                                 columns="{! v.headerData }"
+                                 hideCheckboxColumn="true"
+                                 minColumnWidth="{!v.colWidth}"
+                                 enableInfiniteLoading="{! v.enableInfiniteLoading }"
+                                 loadMoreOffset="{! v.loadMoreOffset }" 
+                                 onloadmore="{! c.continueToLoad }" 
+                                 onrowaction="{!c.viewImageDetails}"
+                                 showRowNumberColumn="true"/>  
+            <span>{! v.loadMoreStatus }</span>
+        </div>
+    </div>      
+</aura:component>

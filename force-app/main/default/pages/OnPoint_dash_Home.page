@@ -1,0 +1,312 @@
+<!--
+Version         : 0.5
+Company         : Labatt
+Creation Date   : 2017-06-01
+Author          : Stephen Scholtz
+Description     : Landing page for OnPoint sales reps
+                  #onpoint #cloudcraze
+
+Helpful links   :
+    
+History         : 
+    2017-06-14 - [Stephen] Added ability to do multiple login buttons via junction object that connects a SF Platform user with
+                 a Community user
+    2017-06-27 - [Stephen] Started to convert to Bootstrap look and feel, from LDS
+               - changed the code back to a 1-to-1 relationship....for now
+    2017-07-07 - [Stephen] Changed it back to 1-to-many again, and hid the header
+    2017-07-10 - [Stephen] minor cosmetic tweaks
+    2017-10-18 - [Stephen] Added comments to remind myself to make this page #tags #todo #multilingual :P
+               - cleaned up code, removed deprecated comments and experiments
+    2018-04-13 - [Stephen] Added check against in active CC Community Users
+    2019-07-29 - [Ragbirendra] Added new button to login to sales rep poc planning App
+
+TODO:
+    - figure out a way to not hardcode the CC store name?
+
+    - lots more needs to go on this dashboard page, reports and other things
+-->
+<apex:page applyBodyTag="false"
+    applyHtmlTag="false"
+    docType="html-5.0"
+    showHeader="false"
+    sidebar="false"
+    standardStylesheets="false"
+    controller="OnPoint_dash_Home"
+>
+<html>
+<head>
+    <title>{!$Label.OnPoint_Dashboard}</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- <meta content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1" name="viewport" /> -->
+
+    <link rel="stylesheet" href="{!URLFOR($Resource.OnPoint_dash_resources, 'OnPoint_dash_resources/font-awesome-4.7.0/css/font-awesome.min.css')}" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.OnPoint_dash_resources, 'OnPoint_dash_resources/jquery-ui-1.12.1/jquery-ui.min.css')}" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.OnPoint_dash_resources, 'OnPoint_dash_resources/bootstrap-3.3.7-dist/css/bootstrap.min.css')}" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.OnPoint_dash_resources, 'OnPoint_dash_resources/onpoint-main.css')}" />
+    
+</head>
+<body class="op-dash">
+    <header class="op-header">
+        <div class="op-header_brand container" style="display:none">
+                    <!-- logo -->
+                    <ul class="nav navbar-nav pull-right">
+                        <!--
+                        search?!?!
+                        #TODO: how will we pull this off outside of CC?
+                        -->
+                        <li>
+                            <div class="search_form cc_search_form">
+                                <div class="navbar-form" role="search">
+                                    <div class="input-group cc_input-group">
+                                        <input id="searchText" type="text" class="form-control search_input ui-autocomplete-input" placeholder="Search Products" title="Product search, at least 2 characters are required" data-trigger="focus" autocomplete="off" />
+                                        <span class="input-group-btn">
+                                        <button id="doSearch" class="btn btn-default search_button" type="Submit" data-original-title="" title=""><span class="fa fa-search" aria-hidden="true"></span></button>
+                                        </span>
+                                    </div>
+                                </div>
+                                <!--
+                                <span id="cc_search_error" data-trigger="manual" data-placement="bottom" data-content="Product search, at least 2 characters are required"></span>
+                                <div class="searchTopBarErrorMessage searchBoxWidgetError"></div>
+                                -->
+                            </div>
+                        </li>
+
+
+                        <!--
+                        language toggle?!?!?
+                        #TODO: is the language toggle a permanent user account change?
+                        #TODO: figure out how to do language toggle for a user; url query string? profile change?  has to be profile
+                    
+                        https://salesforce.stackexchange.com/questions/101491/get-user-language-in-visualforce-without-controller
+                        http://blog.adityanaag.com/25/Translating+text+in+a+Visualforce+Page
+                        https://salesforce.stackexchange.com/questions/57288/multi-language-using-visualforce-with-custom-labels
+                        https://developer.salesforce.com/forums/?id=906F0000000AqtoIAC
+
+                        {!$CurrentPage.parameters.lang}
+
+                        -->
+
+                        <!--
+                        Where the heck does "My Account" go?
+                        Send them to the CC My Account Page for now: /apex/ccrz__MyAccount?viewState=viewAccount&isCSRFlow=true&portalUser=005Q000000Pos2bIAB&store=OnPointSE
+
+                        [DOMAIN]/OnPointSE/ccrz__MyAccount?viewState=viewAccount&isCSRFlow=true&portalUser=005Q000000Pos2bIAB&store=OnPointSE
+                        -->
+                        <!--
+                        UPDATE: this will no longer work, because we have situations where there are multiple community users.
+                        The User.OP CC Community User field was also deprecated for this very reason
+                        -->
+                        <!--
+                        <li><a href="/apex/ccrz__MyAccount?viewState=viewAccount&isCSRFlow=true&portalUser=[!$User.OnPoint_CloudCraze_Community_User__c]&store=OnPointSE"><span class="fa fa-user" aria-hidden="true"></span> My Account</a></li>
+                        -->
+
+                        <!--
+                        My cart:
+                        CSR Flow into whatever the "active" cart is: /apex/ccrz__Cart?viewState=DetailView&isCSRFlow=true&portalUser=0050j000000gEigAAE&store=OnPointSE
+                        [DOMAIN]/OnPointSE/ccrz__Cart?viewState=DetailView&isCSRFlow=true&portalUser=0050j000000gEigAAE&store=OnPointSE
+                        -->
+                        <!-- UPDATE: See above -->
+                        <!--
+                        <li><a href="/apex/ccrz__Cart?viewState=DetailView&isCSRFlow=true&portalUser=[!$User.OnPoint_CloudCraze_Community_User__c]&store=OnPointSE"><span class="fa fa-shopping-cart" aria-hidden="true"></span> My Cart</a></li>
+                        -->
+
+
+                        <!--
+                        A product link:
+                        /apex/ProductDetails?viewState=DetailView&sku=DMG-20268-7&isCSRFlow=true&portalUser=0050j000000gEigAAE&store=OnPointSE&cclcl=en_CA
+                        -->
+                    </ul>
+        </div>
+        <nav class="navbar navbar-inverse">
+            <div class="container">
+                <!-- <div class="navbar-header">
+                    <div class="navbar-brand">OnPoint Dashboard</div>
+                </div> -->
+                <!--
+                <div class="navbar-collapse collapse in">
+                    <ul class="nav navbar-nav">
+                        <li><a href="#">Shop POCM (Cloud Craze)</a></li>
+                        <li><a href="{!URLFOR($Page.OnPoint_dash_AllocationManagement)}">{!$Label.OnPoint_dash_nav_AllocationManagement}</a></li>
+                        <li><a href="#">Reporting</a></li>
+                        <li><a href="#">Order History</a></li>
+                    </ul>
+                </div>
+                -->
+            </div>
+        </nav>
+    </header>
+    <main class="op-main container">
+        <div>
+            <h1 class="slds-text-heading_large">{!$Label.OnPoint_Dashboard}</h1>
+            
+            <!--
+            Need a way to do multiple logins for following scenarios:
+            - A sales rep may be in charge of multiple territories, either because they can handle it, or they're covering for someone
+              else; in this case, they may need to be able to login with multiple community users to get different price books, POCs, etc.
+            - A sales rep may need to support a "national" key account, like Jack Astors; these are all so called "tier" accounts;
+              these are spread across multiple territories; they may need to login to multiple territories to place all these orders
+            - a DSM, District Sales Manager, should be able to login to support all the Territories of the sales reps that they manage,
+              so the DSM will need to login under multiple territories
+            - a Sales Enabler may help sales reps by placing orders for them; the Sales Enabler may need to be able to login to
+              multiple community accounts for different price books, etc.
+            -->
+
+            <div class="slds-text-longform">
+                <p>{!$Label.OnPoint_ComUserAccFor} {!$User.FirstName} {!$User.LastName} ({!$User.Id}):</p>
+                <ul>
+                    <apex:repeat value="{!communityAssignments}" var="comAssignment">
+                        <li>
+                            {!comAssignment.OnPoint_Territory__r.Name}:
+                            <apex:outputText rendered="{!!ISBLANK(comAssignment.OnPoint_Territory__r.CloudCraze_Community_User__c)}">{!comAssignment.OnPoint_Territory__r.CloudCraze_Community_User__r.Name} ({!comAssignment.OnPoint_Territory__r.CloudCraze_Community_User__c})</apex:outputText>
+                            <apex:outputText rendered="{!ISBLANK(comAssignment.OnPoint_Territory__r.CloudCraze_Community_User__c)}" value="{!$Label.OnPoint_TerritoryGuide}"></apex:outputText><!-- #tags #multilingual -->
+                        </li>
+                    </apex:repeat>
+                </ul>
+            </div>
+ 
+            <apex:variable value="{!1}" var="counter"/>
+            <apex:repeat value="{!communityAssignments}" var="comAssignment">
+                <apex:outputPanel layout="block" rendered="{!AND(!ISBLANK(comAssignment.OnPoint_Territory__r.CloudCraze_Community_User__r),comAssignment.OnPoint_Territory__r.CloudCraze_Community_User__r.IsActive)}">
+                    <p><button onclick="OnPointDash.CloudCrazeLogin('{!comAssignment.OnPoint_Territory__r.CloudCraze_Community_User__r}');" class="btn btn-default js-dash-CloudCrazeLogin0{!counter}">{!comAssignment.OnPoint_Territory__r.CloudCraze_Community_User__r.Name}</button></p>
+                </apex:outputPanel>
+                
+                <apex:outputPanel layout="block" rendered="{!ISBLANK(comAssignment.OnPoint_Territory__r.CloudCraze_Community_User__r)}">
+                    <p class="text-danger">
+                        <apex:outputText value="{!$Label.OnPoint_NoActiveCommunityUser}" escape="false">
+                            <apex:param value="{!comAssignment.OnPoint_Territory__r.Name}"/>
+                        </apex:outputText>
+                    </p>
+                </apex:outputPanel>
+                <apex:outputPanel layout="block" rendered="{!AND(
+                    NOT(
+                        ISBLANK(comAssignment.OnPoint_Territory__r.CloudCraze_community_User__r)
+                    )
+                    , !comAssignment.OnPoint_Territory__r.CloudCraze_Community_User__r.IsActive
+                )}">
+                    <p class="text-danger">
+                        <apex:outputText value="{!$Label.OnPoint_InActiveCommunityUser}" escape="false">
+                            <apex:param value="{!comAssignment.OnPoint_Territory__r.CloudCraze_Community_User__r.Name}"/>
+                        </apex:outputText>
+                    </p>
+                </apex:outputPanel>
+                <!--<apex:outputPanel layout="block">
+                    <p><button onclick="OnPointDash.OnPlanLogin('{!comAssignment.OnPoint_Territory__r.onPlan_Budget__c}');" class="btn btn-default js-dash-CloudCrazeLogin0{!counter}"> Login {!comAssignment.OnPoint_Territory__r.CloudCraze_Community_User__r.Name} to Onplan</button></p>
+                </apex:outputPanel> -->
+                 
+                <apex:variable var="counter" value="{!counter + 1}"/>
+            </apex:repeat> 
+             <apex:repeat value="{!budgetList}" var="blist"> 
+                <apex:outputPanel layout="block">
+                    <p><button onclick="OnPointDash.OnPlanLogin('{!blist.Id}');" class="btn btn-default js-dash-CloudCrazeLogin0{!counter}"> POC Planning - {!blist.Owner.Name} - {!blist.Sales_Territory__r.lboc_Territory_ID__c} - {!blist.Sales_Territory__r.name} </button></p>
+                </apex:outputPanel>  
+             </apex:repeat> 
+             
+                <apex:outputPanel layout="block" rendered="{!isTAAdmin}">
+                    <p><button onclick="OnPointDash.OnPlanDataUploadDash('{!$Label.ABI_OP_URL}');" class="btn btn-default js-dash-CloudCrazeLogin0{!counter}">POC Planning Setup - Data Upload </button></p>
+                </apex:outputPanel>  
+             
+               <apex:repeat value="{!code}" var="fld"> 
+                  <apex:outputPanel layout="block" rendered="{!isTAAdmin}">
+                      <p><button onclick="OnPointDash.OnPlanPreview('{!fld.user_Email_Id__c}');" class="btn btn-default js-dash-CloudCrazeLogin0{!counter}">{!fld.previewAs__c} </button></p>
+                  </apex:outputPanel>  
+               </apex:repeat>
+
+             <!--<apex:outputPanel layout="block"  rendered="{!listOPT.size>0}" >
+                    <p><button onclick="OnPointDash.OnPlanLogin(null);" class="btn btn-default js-dash-CloudCrazeLogin0{!counter}">Login as Backoffice to POC Planning</button></p>
+             </apex:outputPanel>-->
+            
+            <apex:outputPanel layout="block" rendered="{!communityAssignments.size==0}">
+                <div class="alert alert-danger" role="alert"><apex:outputText value="{!$Label.OnPoint_MustBeAssignedTerritory}"></apex:outputText></div>
+                <p><button class="btn btn-default js-dash-CloudCrazeLogin01" disabled="true">{!$Label.OnPoint_LoginToCC}</button></p>
+            </apex:outputPanel>          
+
+        </div>
+        <div>
+            <!--<apex:outputPanel layout="block">
+                    <p><button onclick="OnPointDash.OnPlanLogin();" class="btn btn-default js-dash-CloudCrazeLogin0{!counter}">Login to Onplan</button></p>
+            </apex:outputPanel>-->
+           
+        </div>
+        <div>
+          <apex:pageBlock >
+               <apex:pageBlockSection title="{!$Label.OnPoint_Updates}" > 
+			<apex:pageBlockTable value="{!onPointUpdates}" align="center" var="a" border="1" width="1000px">
+			<apex:column headerValue="" value="{!a.Update__c}" />
+			</apex:pageBlockTable>
+		</apex:pageBlockSection>
+		</apex:pageBlock>
+        </div>
+    </main>
+	
+    <script type="text/javascript">
+    var OnPointDash = OnPointDash || {};
+    OnPointDash.Theme = '{!$User.UIThemeDisplayed}';
+    /*
+    Theme1—Obsolete Salesforce theme
+    Theme2—Salesforce Classic 2005 user interface theme
+    Theme3—Salesforce Classic 2010 user interface theme
+    Theme4d—Modern “Lightning Experience” Salesforce theme
+    Theme4t—Salesforce1 mobile Salesforce theme
+    PortalDefault—Salesforce Customer Portal theme
+    Webstore—Salesforce AppExchange theme
+    */
+
+    /**
+     * Cloud Craze login flow, punts a user from the VF dashboard (VF page living in native SF) to the Cloud Craze Community
+     * using the User's paired Community User account (User.OnPoint_CloudCraze_Community_User__c)
+     *
+     */
+    OnPointDash.CloudCrazeLogin = function(commUserId) {
+       
+        if (commUserId) {
+            // TODO: find a way to not have to hardcode the store name?
+            // #tags #todo #storename
+            var OnPointStoreId = 'OnPointSE';
+            var targetURL = '/apex/ccrz__homepage?isCSRFlow=true&portalUser=' + commUserId + '&store=' + OnPointStoreId;
+            // console.log('DEBUG: targetURL = ' + targetURL);
+
+            // Make this Lightning-safe w/ sforce.one.navigateToURL()?  Seems to be working fine as is
+            if (window!=window.top) {
+                window.open(targetURL);
+            } else {
+                window.location = targetURL;
+            }
+        }
+    };
+     /**
+     * Project name : Onplan enhancement
+     * Modified date: 17-07-2019
+     * modified By  :Ragbirendra Upadhyay
+     * This method is used to redirect DSM to his reps onplan shop window
+     */
+   OnPointDash.OnPlanLogin = function(TerritoryId) {
+       if(TerritoryId !=null) {
+              var targetURL = '/apex/POCPlanningApp?Page=Dashboard&Plan=Out%20of%20Home&Year=0&TerritoryId='+TerritoryId;  
+           }
+        else {
+              var targetURL ='/apex/POCPlanningApp';
+           }
+       window.open(targetURL);
+    };
+    OnPointDash.OnPlanDataUploadDash = function(base) {
+        var targetURL = base +'/lightning/cmp/c__AutomationTabDashBoard';  
+       window.open(targetURL);
+    };
+    OnPointDash.OnPlanPreview = function(userId) {
+        
+        var targetURL ='/apex/POCPlanningApp?Page=Dashboard&Plan=Out%20of%20Home&Year=0&TerritoryId='+userId; 
+       window.open(targetURL);
+    };
+    </script>
+
+    <script src="{!URLFOR($Resource.OnPoint_dash_resources, 'OnPoint_dash_resources/jquery-2.2.4.min.js')}"></script>
+    <script src="{!URLFOR($Resource.OnPoint_dash_resources, 'OnPoint_dash_resources/bootstrap-3.3.7-dist/js/bootstrap.min.js')}"></script>
+    <script src="{!URLFOR($Resource.OnPoint_dash_resources, 'OnPoint_dash_resources/jquery-ui-1.12.1/jquery-ui.min.js')}"></script>
+
+
+</body>
+</html>
+</apex:page>

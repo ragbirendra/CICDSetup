@@ -1,0 +1,106 @@
+<aura:component implements="flexipage:availableForAllPageTypes,force:appHostable" controller="UpdatePOCPlanningShoppedKitCtrl">
+    
+    <aura:attribute name="enteredSku" type="String" />
+    <aura:attribute name="mktItemAssData" type="List" />
+    <aura:attribute name="selectedAssociations" type="List" />
+    <aura:attribute name="delListOfAss" type="String[]" />
+     <aura:attribute name="selectedProgramValue" type="String" />
+    <aura:attribute name="showLoading" type="Boolean" default="false" />
+	<aura:attribute name="msgToPass" type="String[]"   />
+    <aura:attribute name="openModal" type="Boolean" default="false" />
+    <aura:attribute name="checkAllValue" type="Boolean" default="true" />
+    <aura:attribute name="YearList" type="Integer[]" />
+    <aura:attribute name="selectedYr" type="String" default="None"/>
+    <aura:attribute name="selectedCh" type="String" default="None"/>
+    <aura:attribute name="ProgramLst" type="String[]" />
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    <aura:attribute name="isLoading" type="Boolean" default="false" />
+     <aura:if isTrue="{!v.isLoading}">
+        <lightning:spinner variant="brand"
+                           aura:id="isLoading" class="lightSpin"  size="large" alternativeText="Loading More Data..."/> 
+        
+        <p style="width: 100%;text-align: center;font-weight: bold;top: 11em;position: relative;left: 0px;width: 100vw;" > Please wait while we Load data for you! </p>
+        
+    </aura:if>
+    <!--Modal Popup-->
+    <aura:if isTrue="{!v.openModal}">
+        <c:ModalPopup msgToPass="{!v.msgToPass}" openModal="{!v.openModal}" />
+    </aura:if>
+    <aura:handler name="init" action="{!c.doInit}" value="{!this}"/>
+    <lightning:layout multipleRows="true">
+               <lightning:layoutItem size="3" padding="around-small"> 
+                    <lightning:select required="true" messageWhenValueMissing="Did you forget to select Channel?"
+                                      name="ChannelList" label="Select Business Line" value="{!v.selectedCh}" aura:id="busSel"
+                                      onchange="{!c.onChannelChange}">
+                        <option value="channel"> ----- </option>
+                        <option value="Out of Home">Out of Home</option>
+                        <option value="In Home">In Home</option>
+                    </lightning:select>
+               </lightning:layoutItem>
+                <lightning:layoutItem size="3" padding="around-small"> 
+                    <lightning:select required="true" name="YearList" label="Select Year:"  onchange="{!c.onYearChange}" value="{!v.selectedYr}" aura:id="yrSel">
+                        <option value="selectyear"> ----- </option>
+                        <aura:iteration items="{!v.YearList}" var="Yr">
+                            <option text="{!Yr}" value="{!Yr}" />
+                        </aura:iteration>
+                    </lightning:select> 
+               </lightning:layoutItem>
+           
+           <lightning:layoutItem size="6" padding="around-small">
+             <lightning:select name="select" label="Select Program Name" aura:id="proSel" value="{!v.selectedProgramValue}">
+                <option value="Select a Program">Select a Program</option> 
+                <!-- <option value="All">All</option>-->
+                <aura:iteration items="{!v.ProgramLst}" var="pn">
+                    <option value="{!pn}">{!pn}</option>
+                </aura:iteration>
+             </lightning:select>
+          </lightning:layoutItem>
+                <br/>
+                <br/>
+         
+             <lightning:layoutItem size="12" padding="around-small">
+                <lightning:button name="getItemButt" label="Show Shoppedkit" 
+                                        onclick="{!c.loadItemRecord}"  variant="brand"/>
+             </lightning:layoutItem>
+        
+        <lightning:layoutItem size="12" padding="around-small">
+            <aura:if isTrue="{!v.showLoading}">
+                <lightning:spinner variant="brand" size="medium" aura:id="lightSpin" />
+            </aura:if>
+            <lightning:card title="Current Associations" footer="" class="slds-p-around_medium">
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                    <thead>
+                        <tr class="slds-line-height_reset">
+                            <th>
+                                Select
+                            </th>
+                            <th>
+                                Associated Shopped Kit Name
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <aura:iteration items="{!v.mktItemAssData}" var="thisAssociation">
+                            <tr class="slds-line-height_reset">
+                                <td>
+                                    <lightning:input type="checkbox" value="{!thisAssociation.Id}" aura:id="selCheckBox" onchange="{!c.processDeletion}" />
+                                </td>
+                                <td>
+                                    <span>
+                                        {!thisAssociation.Name}
+                                    </span>
+                                </td>
+                            </tr>
+                        </aura:iteration>
+                        <tr class="slds-line-height_reset">
+                            <td colspan="2" style="text-align: center;">
+                                <lightning:button name="delAssButt" label="DELETE" onclick="{!c.deleteAssociations}" variant="brand" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </lightning:card>
+        </lightning:layoutItem>
+    </lightning:layout>
+</aura:component>

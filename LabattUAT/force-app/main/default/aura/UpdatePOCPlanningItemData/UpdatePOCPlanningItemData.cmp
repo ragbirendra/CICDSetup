@@ -1,0 +1,75 @@
+<aura:component implements="flexipage:availableForAllPageTypes,force:appHostable" 
+                controller="UpdatePOCPlanningItemsCtrl">
+    
+    <aura:attribute name="selectedItemId" type="String" default="" />
+    <aura:attribute name="ihval" type="String" default="" />
+    <aura:attribute name="oohval" type="String" default="" />
+    
+    <aura:attribute name="recordId" type="Id"  />
+    <aura:attribute name="enteredSku" type="String" />
+    <aura:attribute name="link" type="String" />
+    <aura:attribute name="showDataSection" type="Boolean" default="false" />
+    <aura:attribute name="showImageSection" type="Boolean" default="true" />
+    <aura:attribute name="recFields" type="String[]" 
+                    default="Name,Price__c,Is_Available__c,Item_Description_EN__c,Item_Unit_of_Measure__c,Items_Product_Type__c,Items_Parent_Product_Types__c,Size__c,Marketing_Type__c,Is_Program_Only__c" />
+    <aura:attribute name="accept" type="List" default="['.jpg', '.jpeg','.png']"/>
+    <aura:attribute name="recFieldsImg" type="String[]" 
+                    default="Image__c" />
+    
+    <aura:attribute name="multipleFiles" type="Boolean" default="false"/>
+    <aura:attribute name="fileName" type="String" default="No File Selected.." />
+    <aura:attribute name="msgToPass" type="String[]"   />
+    <aura:attribute name="openModal" type="Boolean" default="false" /> 
+    <aura:handler name="init" action="{!c.doInit}" value="{!this}"/>
+    <lightning:navigation aura:id="navService"/>
+    <!--Modal Popup-->
+    <aura:if isTrue="{!v.openModal}">
+        <c:ModalPopup msgToPass="{!v.msgToPass}" openModal="{!v.openModal}" />
+    </aura:if>
+    
+    <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_warning" role="alert" style="margin: 3px;">
+        <h2>
+            <a href="#"  target="_blank" onclick="{!c.handleClick}">
+                POC Planning report folder</a>
+            Navigate to the folder <b>POC Planning </b> files
+        </h2>
+    </div>
+    <lightning:layout multipleRows="true">
+        <lightning:layoutItem size="12" padding="around-small">
+            <lightning:card title="Search Item By SKU" footer="" class="slds-p-around_medium">
+                <lightning:input type="text" label="Enter SKU Number" value="{!v.enteredSku}" class="slds-p-bottom_small"/>
+                <lightning:button name="getItemButt" label="Show Item" 
+                                  onclick="{!c.loadItemRecord}" variant="brand"/>
+            </lightning:card>
+        </lightning:layoutItem>
+        <aura:if isTrue="{!v.showDataSection}">            
+            <lightning:layoutItem size="12" padding="around-small">
+                
+                <lightning:card title="ITEM DETAILS" footer="" class="slds-p-around_medium">
+                    <lightning:recordForm recordId="{!v.selectedItemId}"
+                                          objectApiName="Marketing_Item__c"
+                                          fields="{!v.recFields}"
+                                          columns="2"
+                                          mode="read" >
+                       
+                    </lightning:recordForm>
+                    <lightning:recordViewForm recordId="{!v.recordId}"
+                                              objectApiName="Marketing_Item__c" > 
+                        
+                        <lightning:outputField fieldName="Image__c" class="sizeForImg" />
+                    </lightning:recordViewForm>
+                    <aura:if isTrue="{!v.showImageSection}">
+                        <lightning:input aura:id="fuploader" onchange="{!c.handleFilesChange}" 
+                                         type="file" name="file" label="Upload Image" multiple="false"/>
+                        <div class="slds-text-body_small slds-text-color_error">{!v.fileName} </div>
+                        <br/>
+                        <lightning:button label="Cancel" onclick="{!c.handleCancel}" class="slds-m-top--medium" />
+                        <lightning:button label="Save" onclick="{!c.handleSave}"
+                                          variant="brand" class="slds-m-top--medium"/>
+                    </aura:if>
+                </lightning:card>
+            </lightning:layoutItem>
+        </aura:if>
+        
+    </lightning:layout>
+</aura:component>

@@ -1,0 +1,644 @@
+<aura:component controller="ProductBrandItemListViewApex" 
+                implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" 
+                access="global" >
+    <aura:attribute name="data" type="String[]"/>   <!-- for Resizable Data Table-->
+    <aura:attribute name="mouseStart" type="string" />
+    <aura:attribute name="newWidth" type="string" />
+    <aura:attribute name="status" type="string" />
+    
+    <aura:attribute name="currentEle" type="Object" />
+    <aura:attribute name="reasonForRejection" type="String" />
+    <aura:attribute name="selectedRowToDelete" type="String[]" />
+    
+    <aura:attribute name="isTAUser" type="boolean" default="false"/>
+    <aura:attribute name="isTAAdmin" type="boolean" default="false"/>
+    
+    <div class="container" onmouseup="{!c.resetColumn}">
+        <div class="slds-table--header-fixed_container slds-scrollable_x">
+            <div class="">
+                
+                <table class="slds-table slds-table--header-fixed slds-table_bordered slds-table_edit slds-table_resizable-cols" 
+                       style="table-layout:fixed">
+                    
+                    <thead>
+                        <tr class="slds-text-title_caps">
+                            <!--header checkbox for select all-->
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:50px;">
+                                <div class="slds-cell-fixed" style="width:50px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Sr. No</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            <th scope="col" class="slds-is-resizable" style="width:200px;">
+                                <div class="slds-cell-fixed" style="width:200px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Brand Name &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" readonly="true" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            <th scope="col" class="slds-is-resizable" style="width:300px;">
+                                <div class="slds-cell-fixed" style="width:300px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Program Name &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Status of Approval &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">ITEM NAME &nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Image &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:200px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Is User Paid &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            <th scope="col" class="slds-is-resizable" style="width:200px;">
+                                <div class="slds-cell-fixed" style="width:200px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Program Start Date &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:200px;">
+                                <div class="slds-cell-fixed" style="width:200px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Program End Date &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:200px;">
+                                <div class="slds-cell-fixed" style="width:200px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Planning Start Date &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:200px;">
+                                <div class="slds-cell-fixed" style="width:200px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Planning End Date &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">SAP ID&nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">TEMP ID &nbsp;&nbsp;</div>
+                                    
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Is Allocation &nbsp;</div>
+                                    
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            
+                            
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:300px;">
+                                <div class="slds-cell-fixed" style="width:300px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Program Descritpion &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">LANGUAGE &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            <th scope="col" class="slds-is-resizable" style="width:200px;">
+                                <div class="slds-cell-fixed" style="width:300px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Item Description(EN) &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            <th scope="col" class="slds-is-resizable" style="width:200px;">
+                                <div class="slds-cell-fixed" style="width:300px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Item Description(FR) &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Item Type &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>   
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Full Price To Rep &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>  
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Standard Price &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Unit of Measure &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>   
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Quantity&nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Item Classification &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                          
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Business Line &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Atlantic &nbsp;&nbsp; </div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Ontario &nbsp;&nbsp; </div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">Quebec &nbsp;&nbsp; </div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            
+                            <th scope="col" class="slds-is-resizable" style="width:100px;">
+                                <div class="slds-cell-fixed" style="width:100px;" onmousemove="{!c.setNewWidth}">
+                                    <div class="slds-truncate">West &nbsp;&nbsp;</div>
+                                    <div class="slds-resizable">
+                                        <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                        <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                            <span class="slds-resizable__divider"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            <aura:if isTrue = "{!v.isTAUser}">
+                                <th scope="col" class="slds-is-resizable" style="width:230px;">
+                                    <div class="slds-cell-fixed" style="width:500px;" onmousemove="{!c.setNewWidth}">
+                                        <div class="slds-truncate">Year &nbsp;&nbsp;</div>
+                                        <div class="slds-resizable">
+                                            <input type="range" min="20" max="1000" class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-assignment" tabindex="-1" />
+                                            <span class="slds-resizable__handle" onmousedown="{!c.calculateWidth}">
+                                                <span class="slds-resizable__divider"></span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </th>
+                            </aura:if>
+                        </tr>
+                    </thead>
+                    <tbody onmousemove="{!c.resetColumn}"> 
+                        <aura:iteration items="{!v.data}" var="PBItems" indexVar = "indexVarNo">
+                            
+                            <tr>
+                                <td >
+                                    <div class="slds-truncate">
+                                        {!indexVarNo + 1}
+                                    </div>
+                                </td>
+                                
+                                <td>
+                                    <div class="slds-truncate">
+                                        <lightning:input type="text"  label="" value="{!PBItems.BrandName}" maxlength="20" minlenght="3" readonly = "true" />
+                                    </div>
+                                </td>
+                                
+                                <td> 
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.programName}" readonly="true" /> 
+                                        
+                                    </div>
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.Status}" readonly="true" /> 
+                                        
+                                    </div>
+                                </td>  
+                                <td>
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.ProductName}"  readonly="true"/> 
+                                        
+                                    </div>
+                                </td> 
+                                
+                                <td>
+                                    <div class="slds-truncate">
+                                        <aura:if isTrue="{!PBItems.ImageLink !=''}">
+                                            <img src="{!PBItems.ImageLink}" />
+                                            <aura:set attribute="else">
+                                                <p style="color:red"> No image found</p>
+                                            </aura:set>
+                                        </aura:if>
+                                    </div>
+                                </td>  
+                                <td>
+                                    <div class="slds-truncate">
+                                        <aura:if isTrue="{!PBItems.isUserPaid}">
+                                            <lightning:input type="checkbox"   checked="true" disabled="true"/> 
+                                            <aura:set attribute="else">
+                                                <lightning:input type="checkbox"   checked="false" disabled="true"/>     
+                                            </aura:set>
+                                        </aura:if>
+                                    </div>
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        <lightning:input type="text"  label="" value="{!PBItems.ProgramStartDate}" readonly="true" /> 
+                                        
+                                    </div>
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.ProgramEndDate}" readonly="true" /> 
+                                    </div>   
+                                </td>  
+                                <td>
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.PlanningStartDate}" readonly="true" /> 
+                                        
+                                    </div>
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.PlanningEndDate}"  readonly="true"/> 
+                                    </div>
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        <aura:if isTrue="{!or(PBItems.SAPItemNumber !='',PBItems.TempItemNumber !='')}">
+                                            
+                                            <lightning:input type="text"  label="" value="{!PBItems.SAPItemNumber}"  readonly="true"/> 
+                                            <aura:set attribute="else">
+                                                <lightning:input class="slds-has-error" type="text"  label="" value="{!PBItems.SAPItemNumber}" readonly="true"/>
+                                                <p style="color:red">Please enter Sap id or Temp Id</p>
+                                            </aura:set>
+                                        </aura:if>
+                                    </div>
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        <lightning:input type="text"  label="" value="{!PBItems.TempItemNumber}" readonly="true" /> 
+                                        
+                                    </div> 
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        <aura:if isTrue="{!PBItems.IsAllocationOnly}">
+                                            <lightning:input type="checkbox"   checked="true" disabled="true"/> 
+                                            <aura:set attribute="else">
+                                                <lightning:input type="checkbox"   checked="false" disabled="true"/>     
+                                            </aura:set>
+                                        </aura:if>
+                                    </div>
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.ProgramDescritpion}" maxlength="18" readonly="true" /> 
+                                    </div>
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        <lightning:input type="text"  label="" value="{!PBItems.Language}"  readonly="true"/> 
+                                        
+                                    </div>	
+                                </td>  
+                                <td>
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.ItemDescriptionEN}"  readonly="true"/> 
+                                        
+                                    </div>	
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        <lightning:input type="text"  label="" value="{!PBItems.ItemDescriptionFR}" readonly="true" /> 
+                                        
+                                    </div>	
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.ItemType}" readonly="true" /> 
+                                        
+                                    </div>	
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.FullPriceToRep}" readonly="true" /> 
+                                        
+                                    </div>	
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.StandardPrice}" readonly="true" /> 
+                                        
+                                    </div>	
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.UnitofMeasure}" readonly="true" /> 
+                                        
+                                    </div>	
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.Quantity}" readonly="true" /> 
+                                        
+                                    </div>	
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        <lightning:input type="text"  label="" value="{!PBItems.ItemClassification}" readonly="true" /> 
+                                    </div>	
+                                </td> 
+                              
+                                <td>
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.BusinessLine}"  readonly="true"/> 
+                                        
+                                    </div>	
+                                </td> 
+                                
+                                <td>
+                                    <div class="slds-truncate">
+                                        <aura:if isTrue="{!PBItems.Atlantic}">
+                                            <lightning:input type="checkbox"   checked="true" disabled="true"/> 
+                                            <aura:set attribute="else">
+                                                <lightning:input type="checkbox"   checked="false" disabled="true"/>     
+                                            </aura:set>
+                                        </aura:if>
+                                    </div>
+                                </td> 
+                                
+                                <td>
+                                    <div class="slds-truncate">
+                                        <aura:if isTrue="{!PBItems.Ontario}">
+                                            <lightning:input type="checkbox"   checked="true" disabled="true"/> 
+                                            <aura:set attribute="else">
+                                                <lightning:input type="checkbox"   checked="false" disabled="true"/>     
+                                            </aura:set>
+                                        </aura:if>
+                                    </div>
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        <aura:if isTrue="{!PBItems.Quebec}">
+                                            <lightning:input type="checkbox"   checked="true" disabled="true"/> 
+                                            <aura:set attribute="else">
+                                                <lightning:input type="checkbox"   checked="false" disabled="true"/>     
+                                            </aura:set>
+                                        </aura:if>
+                                    </div>	
+                                </td> 
+                                
+                                <td>
+                                    <div class="slds-truncate">
+                                        <aura:if isTrue="{!PBItems.West}">
+                                            <lightning:input type="checkbox"   checked="true" disabled="true"/> 
+                                            <aura:set attribute="else">
+                                                <lightning:input type="checkbox"   checked="false" disabled="true"/>     
+                                            </aura:set>
+                                        </aura:if>
+                                    </div>	
+                                </td> 
+                                <td>
+                                    <div class="slds-truncate">
+                                        
+                                        <lightning:input type="text"  label="" value="{!PBItems.Year}"  readonly="true"/> 
+                                        
+                                    </div>	
+                                </td>
+                                <!-- <aura:if isTrue = "{!v.isTAUser}">
+                                    <td>
+                                        <div class="slds-truncate">
+                                            <lightning:input type="text" label="" value="{!PBItems.rejectionComment}" readonly="true"  /> 
+                                            <aura:set attribute="else">
+                                                <lightning:input type="text" label="" value="{!PBItems.rejectionComment}" readonly="true"  />     
+                                            </aura:set>
+                                        </div>	
+                                    </td>
+                                </aura:if>-->
+                                
+                                <aura:if isTrue = "{!v.status != 'Approved'}">
+                                    <aura:if isTrue = "{!v.status != 'Submitted for Approval'}">
+                                        <aura:if isTrue = "{!v.status != 'Completed'}">
+                                            <td>
+                                                <a onclick="{!c.removeRow}" data-record="{!indexVarNo}">
+                                                    <lightning:icon iconName="utility:delete" size="small" alternativeText="Delete"/>
+                                                    <span class="slds-assistive-text">Delete</span>
+                                                </a>
+                                            </td> 
+                                        </aura:if>
+                                    </aura:if>
+                                </aura:if>
+                             </tr>
+                        </aura:iteration>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</aura:component>

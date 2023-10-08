@@ -1,0 +1,81 @@
+<aura:component implements="flexipage:availableForAllPageTypes,force:appHostable" controller="POCPlanBrandRestrictionsCtrl">
+    <aura:attribute name="resBrandList" type="String[]"  />
+    <aura:attribute name="showLoading" type="Boolean" default="false" />
+    
+    <aura:attribute name="selectedYear" type="String" />
+    <aura:attribute name="yearOptions" type="String[]" />
+    <aura:attribute name="optionsAvailable" type="List" default="[]"/>
+    <aura:attribute name="valuesSelected" type="List" default="[]"/>
+    <aura:attribute name="isReadOnly" type="Boolean" default="true" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+
+    <lightning:layout multipleRows="true">
+        <!--<lightning:layoutItem size="9">
+            <lightning:card title="Defined Brand Restriction List" footer="" class="slds-p-around_xx-small">
+                <aura:if isTrue="{!v.showLoading}">
+                    <lightning:spinner variant="Brand" size="medium" aura:id="lightSpin" />
+                </aura:if>
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                    <thead>
+                        <tr class="slds-line-height_reset"> 
+                            <td>
+                                <span>RESTRICTED BRAND</span>
+                            </td>
+                            <td>
+                                <span>ACTION</span>
+                            </td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <aura:iteration items="{!v.resBrandList}" var="thisBrand">
+                            <tr class="slds-line-height_reset">
+                                <td>
+                                    <span>{!thisBrand}</span>
+                                </td>
+                                <td>
+                                    <a onclick="{!c.updtBrandRestriction}" data-brandVal="{!v.thisBrand}" class="slds-button slds-button_brand">
+                                        <span>EDIT</span>
+                                    </a>
+                                    &nbsp; | &nbsp;
+                                    <a data-brandVal="{!v.thisBrand}" onclick="{!c.removeBrand}" class="slds-button slds-button_destructive">
+                                        <span>DELETE</span>
+                                    </a>
+                                </td>
+                            </tr>
+                        </aura:iteration>
+                    </tbody>
+                </table>                
+            </lightning:card>
+        </lightning:layoutItem>-->
+        <lightning:layoutItem size="12" padding="around-small">
+            <aura:if isTrue="{!v.showLoading}">
+                <lightning:spinner variant="brand" size="medium" aura:id="lightSpin" />
+            </aura:if>
+            <lightning:card title="Select a Budget Year" footer="" class="slds-p-around_xx-small">
+                <lightning:select name="selectElem" label="Select a Year" value="{!v.selectedYear}" required="true"  class="slds-p-around_x-small" onchange="{!c.clearRestrication}">
+                    <option text="--Please Select--" value=""></option>
+                    <aura:iteration items="{!v.yearOptions}" var="yearOpt">
+                        <option text="{!yearOpt}" value="{!yearOpt}"></option>
+                    </aura:iteration>
+                </lightning:select>    
+                <lightning:button name="getResData" label="Show Brand Restrictions" onclick="{!c.renderDualList}" variant="brand" />
+            </lightning:card>
+        </lightning:layoutItem>
+        <lightning:layoutItem size="12" padding="around-small">
+            <lightning:card title="BRAND RESTRICTIONS" footer="" class="slds-p-around_xx-small">
+                <lightning:button name="modifyBrandRes" label="Modify Brand Restrictions" onclick="{!c.modifyBrandRes}" />
+                <lightning:button name="saveBrandRes" label="Save Brand Restrictions" onclick="{!c.saveBrandRes}" />
+                <lightning:button name="cancelBrandRes" label="Cancel operation" onclick="{!c.cancelOpr}" />
+                <lightning:dualListbox name="multipleOptions"  
+                           label= "Select Options" 
+                           sourceLabel="Available Brands" 
+                           selectedLabel="Restricted Brands" 
+                           options="{!v.optionsAvailable}" 
+                           value="{!v.valuesSelected}"
+                           disabled="{!v.isReadOnly}" 
+                           />
+            </lightning:card>
+        </lightning:layoutItem>
+    </lightning:layout>
+</aura:component>

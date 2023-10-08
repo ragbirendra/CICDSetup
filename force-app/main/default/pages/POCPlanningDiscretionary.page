@@ -1,0 +1,532 @@
+<apex:page showHeader="false" sidebar="false">
+    <style>
+        
+        .discretionary-table label{
+        height: 20px;
+        }
+        
+        .discretionary-table .glyphicon:before {
+        visibility: visible;
+        }
+        .discretionary-table .glyphicon.glyphicon-ok:checked:before {
+        color: #55b655;
+        }
+        
+        .discretionary-table .glyphicon-ok:before {
+        color:transparent;
+        }
+        
+        .discretionary-table input[type="checkbox"].glyphicon, .discretionary-table input[type="radio"].glyphicon{
+        visibility: hidden;
+        }
+        
+        .poc-label{
+        font-style: italic;
+        }
+        
+        .POCPlanningDiscretionary {
+        font-size: 130%;
+        }
+        
+        .discretionary-table th{
+        text-align: right;
+        }
+        
+        .discretionary-table td, .discretionary-table input{
+        text-align: center;
+        }
+        
+        .table.discretionary-table .table-title{
+        font-size: 18px;
+        text-align: center;
+        border: none;
+        }
+        
+        .discretionary-table, table.table.discretionary-table td, table.table.discretionary-table th{
+        border: 1px solid #8a8a8a;
+        }
+        
+        .table-wrapper{
+        float: left;
+        display: block;
+        }
+        
+        .blue-border-top{
+        border-top: 1px solid rgb(200, 204, 206);
+        margin-top: 10px;
+        padding-top: 30px;
+        }
+    </style>
+    <script type="text/javascript">
+    var approvalStatus;
+    var planningDateListDiscretionary = [];
+    var planningDateListDiscretionaryIH = [];
+    var plan;
+    var budgetYear;
+    function POCDiscretionaryVM(parent) {
+        
+        var self = this
+        self.parent = parent;;
+        self.initialLoad = true;
+        
+        self.PrePlanningSpend = ko.observable();
+        self.CorePOCMSpend = ko.observable();
+        self.CRMSpend = ko.observable();
+        self.MarketingInvestmentSpend = ko.observable();
+        self.OldCorePOCMSpend = ko.observable();
+        self.OldCRMSpend = ko.observable();
+        self.OldMarketingInvestmentSpend = ko.observable();
+        self.pocSpendCategory = ko.observable();
+        self.VariableSpend = ko.observable(0);
+        self.Region = ko.observable(self.parent.Region);
+        self.capParts = new capParts(self);
+        self.POCId = parent.UrlParameters.POCId;
+        self.discretionarySpend=ko.observable(0);            //W-013969 AP Changes
+        
+        self.toggleModal = function(show, title, body) {
+            if (show && !self.initialLoad) {
+                parent.loadDialog(title, body);
+                $('#modalGeneric').modal();
+            }
+        }
+        
+        self.updateCapCounterParts = function(){DiscretionaryVariableSpend
+        console.log("start updatecounterparts");
+                                                var POCId = parent.UrlParameters.POCId;
+                                                console.log("POCID", POCId);
+                                                var quebecCap = typeof self.capParts.quebecCap() == 'undefined' ? "Sans PDA" :  self.capParts.quebecCap();
+                                                
+                                                console.log("update",POCId,
+                                                            self.capParts.glassware(),
+                                                            self.capParts.tapHandles(),
+                                                            self.capParts.foodPairing(),
+                                                            self.capParts.drinkList(),
+                                                            self.capParts.fullPowerPlay(),
+                                                            self.capParts.feature(),
+                                                            self.capParts.labattDraughtLines(),
+                                                            self.capParts.totalDraughtLines(),
+                                                            quebecCap
+                                                           );
+                                                
+                                                console.log()
+                                                POCPlanningApp.updateCapCounterParts(
+                                                    POCId,
+                                                    self.capParts.glassware(),
+                                                    self.capParts.tapHandles(),
+                                                    self.capParts.foodPairing(),
+                                                    self.capParts.drinkList(),
+                                                    self.capParts.fullPowerPlay(),
+                                                    self.capParts.feature(),
+                                                    self.capParts.labattDraughtLines(),
+                                                    self.capParts.totalDraughtLines(),
+                                                    quebecCap,
+                                                    function(result, event){
+                                                        console.log("result",result);
+                                                        self.capParts.capEligibility(result);
+                                                    }
+                                                );
+                                               }
+        
+        self.fetchDiscretionaryData = function(POCId) {
+            
+            POCPlanningApp.Discretionary(POCId, function(result, event) {
+                self.initialLoad = true;
+                self.PrePlanningSpend(parseInt(result.PrePlanningSpend));
+                
+                self.CorePOCMSpend(parseInt(result.CorePOCMSpend));
+                self.OldCorePOCMSpend(parseInt(result.COREPOCMSpend));
+                
+                self.MarketingInvestmentSpend(parseInt(result.MarketingInvestmentSpend));
+                self.OldMarketingInvestmentSpend(parseInt(result.MarketingInvestmentSpend));
+                
+                self.pocSpendCategory(result.pocSpendCategory);
+                
+                self.CRMSpend(parseInt(result.CRMSpend));
+                self.OldCRMSpend(parseInt(result.CRMSpend));
+                self.capParts.glassware(result.LabattBrandedGlassware);
+                self.capParts.tapHandles(result.LabattLargeTapHandles);
+                self.capParts.foodPairing(result.FoodPairingFeature);
+                self.capParts.drinkList(result.CustomDrinkList);
+                self.capParts.fullPowerPlay(result.FullPowerPlayPackage);
+                self.capParts.feature(result.WeeklyFeaturePTC);
+                self.capParts.labattDraughtLines(parseInt(result.LabattDraughtLines));
+                self.capParts.totalDraughtLines(parseInt(result.TotalDraughtLines));
+                self.capParts.capEligibility(result.CapEligibility);
+                self.capParts.quebecCap(result.QuebecCAPCriteria);
+                console.log("TotalPOCSpend", result.TotalPOCSpend);
+                self.capParts.totalSpend(result.TotalPOCSpend);
+                self.capParts.targetVolume(result.TargetVolHL);
+                
+                parent.ApplyPOCDiscretionaryBinding();
+                
+                self.VariableSpend(parseInt(result.VariableSpend));
+                //console.log('=====in poc navigation== addition==',result.PrePlanningSpend + result.VariableSpend);
+                parent.POCPlanningPOCNavigation.POCBudget.Discretionary(result.PrePlanningSpend+ result.VariableSpend);
+                self.initialLoad = false;
+                self.CorePOCMSpend.subscribe(function () {
+                    var isBackOffice=parent.parent.POCPlanningPOCNavigation.isBackOffice;     //AP CHanges W-013969
+                    var regex = new RegExp('^[0-9]+$');
+                    if ( regex.test( self.CorePOCMSpend() ) ) {                        
+                        //AP Changes W-013969
+                        self.discretionarySpend(parseInt(self.CorePOCMSpend()));         //W-013969 AP Changes
+                        self.VariableSpend(parseInt(self.CorePOCMSpend()) + parseInt(self.CRMSpend()) + parseInt(self.MarketingInvestmentSpend()));
+                        
+                        console.log('in POCM Subscribe=',self.discretionarySpend());
+                        
+                        if (!parent.POCBudgetSummary.BudgetSummary.NeverApproved()) {
+                            if(typeof parent.POCPlanningDashboard == "undefined"){
+                                POCPlanningApp.setAnnuaLPOCBudgetPlanToUpdated(parent.UrlParameters.POCId, function() {});
+                            } else{
+                                parent.POCPlanningDashboard.territoryPOCList()[parent.POCListIndex].IsUpdated(true);
+                            }                       
+                        }
+                        if(!self.initialLoad){
+                            if(!isBackOffice){      //AP CHanges W-013969
+                                POCPlanningApp.OnDiscretionaryChange(parent.UrlParameters.POCId, self.CRMSpend(), self.MarketingInvestmentSpend(), self.CorePOCMSpend(), self.pocSpendCategory(), function() {
+                                });
+                            }
+                            else
+                            {
+                                POCPlanningApp.OnDiscretionaryChange(parent.UrlParameters.POCId, self.CRMSpend(), self.MarketingInvestmentSpend(), self.CorePOCMSpend(), self.pocSpendCategory(), function() {
+                                }); 
+                            }
+                            
+                        }
+                    } else if ( regex.test( self.OldCorePOCMSpend() ) ) {
+                        self.toggleModal(true, '{!$Label.Numeric_Value_Only}', '');
+                        var oldValue = self.OldCorePOCMSpend();
+                        self.CorePOCMSpend(oldValue);
+                        self.OldCorePOCMSpend(oldValue);
+                    } else {
+                        self.CorePOCMSpend(0);
+                        self.toggleModal(true, '{!$Label.Numeric_Value_Only}', '');
+                    }
+                });
+                
+                self.CorePOCMSpend.subscribe(function() {
+                    var regex = new RegExp('^[0-9]+$');
+                    if (regex.test(self.CorePOCMSpend())) {
+                        self.OldCorePOCMSpend(self.CorePOCMSpend());
+                    }
+                }, null, 'beforeChange');
+                
+                self.CRMSpend.subscribe(function () {
+                    var isBackOffice=parent.parent.POCPlanningPOCNavigation.isBackOffice;
+                    var regex = new RegExp('^[0-9]+$');
+                    if ( regex.test( self.CRMSpend() ) ) {  
+                        //if(!isBackOffice){      //AP Changes W-013969
+                        self.discretionarySpend(parseInt(self.CRMSpend()));    // AP Changes W-013969
+                        self.VariableSpend(parseInt(self.CorePOCMSpend()) + parseInt(self.CRMSpend()) + parseInt(self.MarketingInvestmentSpend()));
+                        
+                        console.log('in CRMSpend Subscribe=',self.discretionarySpend());
+                        //}
+                        //else{
+                        // self.VariableSpend( parseInt(self.CRMSpend()));  
+                        //}                               
+                        if (!parent.POCBudgetSummary.BudgetSummary.NeverApproved()) {
+                            if(typeof parent.POCPlanningDashboard == "undefined"){
+                                POCPlanningApp.setAnnuaLPOCBudgetPlanToUpdated(parent.UrlParameters.POCId, function() {});
+                            } else{
+                                parent.POCPlanningDashboard.territoryPOCList()[parent.POCListIndex].IsUpdated(true);
+                            }                       
+                        }
+                        if(!self.initialLoad){
+                            console.log('==isBackOffice==',isBackOffice);
+                            if(!isBackOffice){
+                                POCPlanningApp.OnDiscretionaryChange(parent.UrlParameters.POCId, self.CRMSpend(), self.MarketingInvestmentSpend(), self.CorePOCMSpend(), self.pocSpendCategory(), function() {
+                                }); 
+                            }
+                            else
+                            {
+                                POCPlanningApp.OnDiscretionaryChange(parent.UrlParameters.POCId, self.CRMSpend(), self.MarketingInvestmentSpend(), self.CorePOCMSpend(), self.pocSpendCategory(), function() {
+                                }); 
+                            }
+                        }
+                    } else if ( regex.test( self.OldCRMSpend() ) ) {
+                        self.toggleModal(true, '{!$Label.Numeric_Value_Only}','');
+                        var oldValue = self.OldCRMSpend();
+                        self.CRMSpend(oldValue);
+                        self.OldCRMSpend(oldValue);
+                    } else {
+                        self.toggleModal(true, '{!$Label.Numeric_Value_Only}','');
+                        self.CRMSpend(0);
+                    }
+                });
+                
+                self.CRMSpend.subscribe(function() {
+                    var regex = new RegExp('^[0-9]+$');
+                    if (regex.test(self.CRMSpend())) {
+                        self.OldCRMSpend(self.CRMSpend());
+                    }
+                }, null, 'beforeChange');
+                
+                console.log("POCPlanningDashboard",parent.POCPlanningDashboard);
+                console.log("parent", parent);
+                console.log("self", self);
+                
+                self.MarketingInvestmentSpend.subscribe(function () { 
+                    var isBackOffice=parent.parent.POCPlanningPOCNavigation.isBackOffice;   //Ap Changes w-013969               
+                    var regex = new RegExp('^[0-9]+$');
+                    if ( regex.test( self.MarketingInvestmentSpend() ) ) { 
+                        
+                        //if(!isBackOffice){     //AP Changes W-013969
+                        self.discretionarySpend(parseInt(self.MarketingInvestmentSpend()));    // AP Changes W-013969
+                        self.VariableSpend(parseInt(self.CorePOCMSpend()) + parseInt(self.CRMSpend()) + parseInt(self.MarketingInvestmentSpend()));
+                        
+                        console.log('in MI Subscribe=',self.discretionarySpend());
+                        // }
+                        //else{
+                        //    self.VariableSpend(parseInt(self.MarketingInvestmentSpend()));
+                        //}    
+                        if (!parent.POCBudgetSummary.BudgetSummary.NeverApproved()) {
+                            if(typeof parent.POCPlanningDashboard == "undefined"){
+                                POCPlanningApp.setAnnuaLPOCBudgetPlanToUpdated(parent.UrlParameters.POCId, function() {});
+                            } else{
+                                parent.POCPlanningDashboard.territoryPOCList()[parent.POCListIndex].IsUpdated(true);
+                            }                       
+                        }
+                        if(!self.initialLoad){
+                            if(!isBackOffice){
+                                POCPlanningApp.OnDiscretionaryChange(parent.UrlParameters.POCId, self.CRMSpend(), self.MarketingInvestmentSpend(), self.CorePOCMSpend(), self.pocSpendCategory(), function() {
+                                });
+                            }
+                            else
+                            {
+                                POCPlanningApp.OnDiscretionaryChange(parent.UrlParameters.POCId, self.CRMSpend(), self.MarketingInvestmentSpend(), self.CorePOCMSpend(), self.pocSpendCategory(), function() {
+                                }); 
+                            }
+                        }
+                    } else if ( regex.test( self.OldMarketingInvestmentSpend() ) ) {
+                        self.toggleModal(true, '{!$Label.Numeric_Value_Only}', '');
+                        var oldValue = self.OldMarketingInvestmentSpend();
+                        self.MarketingInvestmentSpend(oldValue);
+                        self.OldMarketingInvestmentSpend(oldValue);
+                    } else {
+                        self.MarketingInvestmentSpend(0);
+                        self.toggleModal(true, '{!$Label.Numeric_Value_Only}', '');
+                    }
+                });
+                
+                self.MarketingInvestmentSpend.subscribe(function() {
+                    self.OldMarketingInvestmentSpend(self.MarketingInvestmentSpend());
+                    var regex = new RegExp('^[0-9]+$');
+                    if (regex.test(self.MarketingInvestmentSpend())) {
+                        self.OldMarketingInvestmentSpend(self.MarketingInvestmentSpend());
+                    }
+                }, null, 'beforeChange');
+                
+                self.updateBudget = function(){
+                    var OriginalPOCVariableSpend = parent.POCPlanningPOCNavigation.POCBudget.Discretionary() - parent.cleanValue(self.PrePlanningSpend());
+                    var POCVariableSpendTotal = parent.cleanValue(self.PrePlanningSpend()) + parent.cleanValue(self.VariableSpend());
+                    var POCVariableSpendDiff = POCVariableSpendTotal - OriginalPOCVariableSpend;
+                    
+                    if(!parent.parent.POCPlanningPOCNavigation.isBackOffice){   //AP Changes W-013969
+                        parent.POCPlanningPOCNavigation.POCBudget.Discretionary(POCVariableSpendTotal);
+                        console.log('=====in a not back office');
+                        parent.POCBudgetSummary.BudgetSummary.DiscretionaryVariableSpend(            //DiscretionaryVariableSpend
+                            parent.POCBudgetSummary.BudgetSummary.DiscretionaryVariableSpend() + 
+                            POCVariableSpendDiff);
+                    }
+                    else
+                    {
+                        console.log('===Discretionary value===',parent.POCPlanningPOCNavigation.POCBudget.Discretionary());
+                        console.log('===in update budget data===',self.discretionarySpend());
+                        var discVariableSpend=parent.cleanValue(self.discretionarySpend())+parent.POCPlanningPOCNavigation.POCBudget.Discretionary();
+                        
+                        parent.POCPlanningPOCNavigation.POCBudget.Discretionary(discVariableSpend);
+                        parent.POCBudgetSummary.BudgetSummary.DiscretionaryVariableSpend(
+                            self.VariableSpend());
+                        //parent.POCBudgetSummary.BudgetSummary.DiscretionaryVariableSpend() + 
+                        //self.discretionarySpend());    //DiscretionaryVariableSpend
+                    }
+                }
+                
+                
+                self.VariableSpend.subscribe(function () {
+                    self.updateBudget();
+                });
+                
+                /*
+                        self.PrePlanningSpend.subscribe(function () {
+                            parent.POCBudgetSummary.BudgetSummary.DiscretionaryPrePlanningSpend(parseInt(self.PrePlanningSpend()));
+                            parent.POCPlanningPOCNavigation.POCBudget.Discretionary( parseInt(self.PrePlanningSpend()) + parseInt(self.VariableSpend()) );
+                        });
+                        */
+                
+            });
+        }
+        self.fetchDiscretionaryData(parent.UrlParameters.POCId);
+        
+        
+        // $('.discretionary-table td').click(function(){
+        //     $(this).find('.glyphicon').toggleClass("glyphicon-ok");
+        // });
+        
+        $('.discretionary-input').keydown(function(e) {
+            if(e.keyCode === 189) {
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        self.planningDateCheck = ko.computed(function(){
+            var MyDate = new Date().getTime();
+            var planningDateListWithBudgetYearOOH = [];
+            var planningDateListWithBudgetYearIH = [];
+            var flagOOH = false;
+            var flagIH = false;
+            for(var i=0; i<planningDateListDiscretionary.length ;i++){
+                if(plan == '{!$Label.Out_of_Home}' && planningDateListDiscretionary[i].Budget_Year__c == budgetYear){
+                    planningDateListWithBudgetYearOOH.push(planningDateListDiscretionary[i]);
+                }
+            }
+            for(var i=0; i<planningDateListDiscretionaryIH.length ;i++){
+                if(plan == '{!$Label.In_Home_IH}' && planningDateListDiscretionaryIH[i].Budget_Year__c == budgetYear){
+                    planningDateListWithBudgetYearIH.push(planningDateListDiscretionaryIH[i]);
+                }
+            }
+            console.log('planningDateListWithBudgetYearOOH',planningDateListWithBudgetYearOOH);
+            console.log('planningDateListWithBudgetYearIH',planningDateListWithBudgetYearIH);
+            if(plan == '{!$Label.Out_of_Home}'){
+                if(planningDateListWithBudgetYearOOH.length > 0 ){
+                    for(var i=0; i<planningDateListWithBudgetYearOOH.length ;i++){
+                        if(approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}' ){
+                            console.log('return false for planning window1');
+                            return true;
+                            console.log('return false for planning window1.0');
+                        }else{
+                            if(planningDateListWithBudgetYearOOH[i].Plan_Start_Date__c < MyDate && planningDateListWithBudgetYearOOH[i].Plan_End_Date__c > MyDate ){
+                                console.log('return false for planning window2');
+                                flagOOH = false;
+                                return false;
+                                
+                            } else{
+                                flagOOH = true;
+                            }
+                        } 
+                    }
+                }else{
+                    return true;
+                }
+            }
+            if(flagOOH == true){
+                return true;
+            }
+            if(plan == '{!$Label.In_Home_IH}'){
+                if(planningDateListWithBudgetYearIH.length > 0 ){
+                    for(var i=0; i<planningDateListWithBudgetYearIH.length ;i++){
+                        if(approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}' ){
+                            console.log('return false for planning window1');
+                            return true;
+                            console.log('return false for planning window1.0');
+                        }else{
+                            if(planningDateListWithBudgetYearIH[i].Plan_Start_Date__c < MyDate && planningDateListWithBudgetYearIH[i].Plan_End_Date__c > MyDate ){
+                                console.log('return false for planning window2');
+                                flagIH = false;
+                                return false;
+                                
+                            } else{
+                                flagIH = true;
+                            }
+                        } 
+                    }
+                }else{
+                    return true;
+                }
+            }
+            if(flagIH == true){
+                return true;
+            }
+        }); 
+    }
+    
+    POCPlanningApp.getFleixblePlanningWindowforDiscretionary(function(result1, event){
+        console.log('getFleixblePlanningWindowforDiscretionaryOOH',result1);
+        POCPlanningApp.InitiateApp(parent.UrlParameters.TerritoryId, function(result, event){
+            console.log('InitiateAppintradeacti',result);
+            console.log('InitiateAppintradeacti1111',result.SelectedYear.Territory.Approval_Status__c);
+            console.log('plan',result.Plan);
+            plan = result.Plan;
+            budgetYear = result.SelectedYear.Territory.Budget_Year__c;
+            console.log('budgetYear',budgetYear);
+            approvalStatus = result.SelectedYear.Territory.Approval_Status__c;
+            if(result.isBackOfficeUser){
+                approvalStatus='Back Office'; 
+            }
+            console.log('ApprovalStatus ',approvalStatus);
+        }),
+            planningDateListDiscretionary = result1;  
+    });
+    
+    POCPlanningApp.getFleixblePlanningWindowforDiscretionaryIH(function(result2, event){
+        console.log('getFleixblePlanningWindowforDiscretionaryIH',result2);
+        POCPlanningApp.InitiateApp(parent.UrlParameters.TerritoryId, function(result, event){
+            console.log('InitiateAppintradeacti',result);
+            console.log('InitiateAppintradeacti1111',result.SelectedYear.Territory.Approval_Status__c);
+            console.log('plan',result.Plan);
+            plan = result.Plan;
+            budgetYear = result.SelectedYear.Territory.Budget_Year__c;
+            console.log('budgetYear',budgetYear);
+            approvalStatus = result.SelectedYear.Territory.Approval_Status__c;
+            if(result.isBackOfficeUser){
+                approvalStatus='Back Office'; 
+            }
+            console.log('ApprovalStatus ',approvalStatus);
+        }),
+            planningDateListDiscretionaryIH = result2;  
+    });
+    
+    function capParts(parent){
+        var self = this;
+        var territoryPOC = parent.parent.territoryPOC;
+        console.log("capparts parent", parent);
+        console.log("capparts parent.parent", parent.parent);
+        self.targetVolume = ko.observable(0);
+        self.marketShare = ko.observable(0);
+        self.glassware = ko.observable();
+        self.tapHandles = ko.observable();
+        self.foodPairing = ko.observable();
+        self.drinkList = ko.observable();
+        self.fullPowerPlay = ko.observable();
+        self.feature = ko.observable();
+        self.labattDraughtLines = ko.observable(0);
+        self.totalDraughtLines = ko.observable(0);
+        self.capEligibility = ko.observable();
+        self.quebecCap = ko.observable();
+        self.driver = ko.observable();
+        self.totalSpend = ko.observable(0);
+        
+        
+        
+    }
+    
+    
+    
+    </script>
+    <div class="POCPlanningDiscretionary" id="POCPlanningDiscretionaryId">
+        <!--  <div class="row" style="border-bottom: 1px solid rgb(200, 204, 206); margin-bottom: 30px; padding-bottom: 30px; text-transform: uppercase">
+<div class="col-sm-4 col-md-2 col-md-offset-2">
+{!$Label.Variable} <strong>$<span data-bind="text: setupNumbers(VariableSpend())" /></strong>
+</div>
+<div class="col-sm-4 col-md-2">
+{!$Label.Super_Bowl_Spend} <strong>$<span data-bind="text: setupNumbers(PrePlanningSpend())" /></strong>
+</div>
+</div> -->
+        <div class="row">
+            <div class="col-sm-4 col-md-3  col-md-offset-1">
+                &nbsp; <strong>{!$Label.CRM}</strong><br /><br />
+                $ <Input type="text" data-bind="value: CRMSpend , disable: planningDateCheck" />  <!--value: CRMSpend,  disable: planningDateCheck-->
+            </div>
+            <div class="col-sm-4 col-md-3">
+                &nbsp; <strong>{!$Label.Marketing_Investment}</strong><br /><br />
+                $ <Input type="text" data-bind=" value: MarketingInvestmentSpend ,  disable: planningDateCheck"  />    <!--value: MarketingInvestmentSpend, -->
+            </div>
+            <div class="col-sm-4 col-md-3">
+                &nbsp; <strong>{!$Label.Core_POCM}</strong><br /><br />
+                $ <Input type="text" data-bind=" value: CorePOCMSpend, disable: planningDateCheck"  />   <!--value: CorePOCMSpend, -->
+            </div>
+        </div>
+        <br />
+        
+    </div>
+</apex:page>

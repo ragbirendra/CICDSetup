@@ -1,0 +1,1462 @@
+<apex:page controller="POCPlanningApp" showHeader="false" sidebar="false">
+
+    <style type="text/css">
+
+        .popover-table-header{
+            background:#eee;
+        }
+
+        .popover-table-header h4{
+            font-weight: bold;
+        }
+
+        .nowrap{
+            white-space: nowrap;
+        }
+
+        .th-background{
+            position: absolute;
+            height: 68px;
+            display: block;
+            background: #fff;
+            width: 100%;
+            top: 0;
+            border-bottom: 2px solid #aaa;
+        }
+
+        .dashboard-container {
+            overflow-y: auto;
+            height: 100%;
+        }
+
+        .dashboard-table {
+            width:100%;
+        	
+        }
+
+        .dashboard-table th {
+            height: 20px;
+            line-height: 0;
+            padding:0 10px 0 0;
+            color: transparent;
+            border: none;
+            white-space: nowrap;
+            text-align:left;
+            background: #fff;
+        }
+
+        .dashboard-table th .search {
+           min-width: 160px;
+        }
+
+        .absolute-100{
+            width:100%;
+            position:absolute;
+        }
+
+        .dashboard-table th > div{
+            position: absolute;
+            padding:10px 0;
+            color: #000;
+            top: 0;
+            line-height: normal;
+        }
+
+        .dashboard-table th > div input, .dashboard-table th > div select{
+            width:100%;
+            position: absolute;
+        }
+
+        .cap-program-table td{
+            text-align: center;
+        }
+
+        .poc-details-table>tbody>tr>td{
+            padding:0;
+        }
+
+        .poc-details-table>tbody>tr>td>table{
+            margin:0;
+        }
+
+        .poc-striped>tbody>tr:nth-of-type(4n+1), .poc-striped>tbody>tr:nth-of-type(4n+2){
+            background: rgb(236, 242, 246);
+        }
+
+        .table .no-border{
+            border:none;
+        }
+
+        .poc-details-table.table{
+            background-color:none;
+            table-layout: fixed;
+        }
+
+        .poc-striped.table>thead>tr>th{
+            vertical-align:top;
+        }
+
+        .light-font{
+            font-weight: lighter;
+        }
+
+        .glyphicon-green>td>span{
+            color: #55b655;
+        }
+
+        .poc-details-table.table td{
+            width: 2%;
+        }
+
+        .popover{
+            max-width:none;
+        }
+        .alert-filter {
+            background-color: rgb(236, 242, 246);
+            text-align: center;
+        }
+
+        .POCDashboard {
+            display: none;
+            position: absolute;
+            top: 112px;
+            bottom:0;
+            margin-top:10px;
+            z-index: 0;
+            padding-top: 68px;
+            padding-right: 3px;
+            padding-bottom: 0;
+            padding-left: 3px;
+            margin-bottom: 10px;
+            left:1%;
+        }
+
+        @media (min-with: 1600px) {
+            .POCDashboard {
+                padding-right: 15px;
+                padding-left: 15px;
+            }
+        }
+
+        .POCDashboardTitle{
+            width: 100%;
+
+        }
+
+        .POCDashboardTitle input[type=text]{
+            width:70%;
+        }
+
+        .POCDashboardTitle.row {
+            background-color: #fff;
+        }
+
+        .POCDashboardTitle.row > div {
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+
+        @media(min-width: 1200px) {
+            .POCDashboardTitle.row {
+                font-size: 120%;
+            }
+        }
+
+
+        .POCDashboardItem.POCRowOdd.row{
+            background-color: #ffffff;
+        }
+
+        .POCDashboardItem.POCRowEven.row{
+            background-color: rgb(236, 242, 246);
+        }
+
+        .POCDashboardItem.row {
+            padding: 0 5px;
+        }
+
+        .POCDashboardItem.row > div > div {
+            padding: 15px 5px;
+            font-size: 110%;
+        }
+
+        .POCDashboardItemTopLine{
+            width: 100%
+        }
+
+        .POCDashboardItemTopLine .POCName{
+            text-decoration: underline;
+            color: #323232;
+        }
+
+        .POCDashboardItemTopLine input{
+            width: 100%;
+        }
+
+        .SplitColumn .Actual{
+            text-align: right;
+        }
+
+        .SplitColumn .Budget{
+            text-align: left;
+        }
+
+        .POCDashboardItemTopLine .SplitColumn{
+            text-align: center;
+            word-break: break-all;
+        }
+
+        .POCDashboardItemDetails{
+            display: none;
+        }
+
+        .POCDashboardItemDetails .POCCell{
+            padding: 5px;
+            border-left: 2px solid;
+            border-right: 2px solid;
+            margin-left: 1px;
+            margin-right: 1px;
+            text-align: center;
+        }
+
+        .POCDashboardItemDetails .POCCell.POCRowOdd{
+            background-color: #f4f4f4;
+            border-color: #ffffff;
+        }
+
+        .POCDashboardItemDetails .POCCell.POCRowEven{
+            background-color: #ffffff;
+            border-color: #f4f4f4;
+        }
+
+        .POCDashboardItemDetailsTable{
+            display: table;
+        }
+
+        .POCDashboardItemDetailsTA, .POCDashboardItemDetailsDrvr, .POCDashboardItemDetailsDisc{
+            float: left;
+            padding: 3px;
+            padding-top: 0 !important;
+        }
+
+        .POCDashboardFooter > div {
+            padding-left: 10px;
+            min-height: 60px;
+            box-sizing: border-box;
+        }
+
+        .POCDashboardFooter{
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            background-color: rgb(76, 86, 122);
+            padding: .75% 0;
+            font-size: 120%;
+            width: 100%;
+            color: #ffffff;
+        }
+
+        .POCDashboardFooter > div {
+            border-right: 1px solid #5dcde4;
+            padding-left: .4%;
+        }
+
+        .POCDashboardFooter > div:last-child {
+            border-right: 0;
+        }
+
+        .POCDashboardFooter > div > div {
+            font-weight: bold;
+        }
+
+        .POCDashboardItemsWrapper {
+            margin-bottom: 60px;
+        }
+
+        #rightData > div {
+            padding: 15px 5px;
+        }
+
+        #mobileBrandOptions {
+            display: block;
+        }
+
+        #desktopBrandOptions {
+            display: none;
+        }
+
+        .POCDashboardTitle > div {
+            vertical-align: top;
+        }
+
+        .POCDashboardTitle > div, .POCDashboardItemTopLine > div {
+            display: inline-block;
+            width: 8.5%;
+        }
+
+        .POCDashboardTitle > div:first-child, .POCDashboardItemTopLine > div:first-child {
+            width: 20%;
+        }
+
+        .POCDashboardFooter > div {
+            width: 16.3%;
+            vertical-align: top;
+            display: inline-block;
+        }
+
+        #hideshow .btn {
+            padding: 3px 6px !important;
+            font-size: 100% !important;
+        }
+
+        @media (min-width: 1200px) {
+            #mobileBrandOptions {
+                display: none;
+            }
+
+            #desktopBrandOptions {
+                display: inline-block;
+            }
+        }
+
+        @media (min-width: 1600px) {
+            #hideshow, #actionBar {
+                display: none !important;
+            }
+
+            .POCDashboardFooter > div:first-child {
+                margin-left: 46%;
+            }
+
+            .POCDashboardFooter > div {
+                width: 8.6%;
+            }
+
+        }
+
+        .POCDashboardTitle, .POCDashboardItemsWrapper, #actionBar {
+            overflow-x: overflow;
+        }
+
+        .btn {
+            background-image: none !important;
+            border: 1px solid transparent !important;
+            border-radius: 4px !important;
+            padding: 6px 12px !important;
+            margin-bottom: 0 !important;
+            font-size: 14px !important;
+            font-weight: 400 !important;
+        }
+       
+
+    </style>
+
+    <script>
+    var approvalStatus;
+    var planningDateListDiscretionary = [];
+    var planningDateListDiscretionaryIH = [];
+    var plan;
+    var budgetYear;
+        function POCPlanningDashboardVM(parent){
+            var self = this;
+            self.parent = parent;
+            self.POCListInitialLoad = true;
+            
+            self.territoryPOCSort = new territoryPOCSort(self);
+            self.territoryPOCList = ko.observableArray();
+            POCPlanningApp.InitiateApp(parent.UrlParameters.TerritoryId, function(result, event){
+                console.log('InitiateAppDash',result);
+                console.log('InitiateAppApproval_Status__c',result.SelectedYear.Territory.Approval_Status__c);
+                console.log('plan',result.Plan);
+                plan = result.Plan;
+                budgetYear = result.SelectedYear.Territory.Budget_Year__c;
+                console.log('budgetYear',budgetYear);
+                approvalStatus = result.SelectedYear.Territory.Approval_Status__c;
+                if(result.isBackOfficeUser){
+                    approvalStatus='Back Office'; 
+                }
+                
+            }),
+                POCPlanningApp.getFleixblePlanningWindowforDiscretionary(function(result2, event){
+                    console.log('getFleixblePlanningWindowforDashboard',result2);
+                    planningDateListDiscretionary = result2;
+            });
+              POCPlanningApp.getFleixblePlanningWindowforDiscretionaryIH(function(result2, event){
+                console.log('getFleixblePlanningWindowforDashboardIH',result2);
+                planningDateListDiscretionaryIH = result2;
+                
+            });
+            
+
+            self.filteredPOCList = ko.computed(function(){
+                return ko.utils.arrayFilter(this.territoryPOCList(), function(item) {
+                    return item.show() === true;
+                });
+            } ,self);
+            
+            
+
+            self.territoryPOCNameFilter = ko.observable();
+            self.territoryChannelOptions = ko.observableArray();
+            self.selectedTerritoryChannel = ko.observable();
+            self.territoryBrandOptions = ko.observableArray();
+            self.selectedTerritoryBrand = ko.observable();
+            self.selectedTerritoryBrandValue =ko.observable();
+            self.hideR12Share = ko.observable(true);
+
+            self.R12_as_of_date = ko.observable(null);
+            self.Labatt_Share_as_of_date = ko.observable(null);
+            self.R12_as_of_date_Display = ko.observable('');
+            self.Labatt_Share_as_of_date_Display = ko.observable('');
+
+            self.filterCriteria = ko.observable();
+            self.TerritoryFooter = new TerritorySummaryFooter(
+                        self,   //parent,
+                        0,      //TargetVol,
+                        0,      //TradeActivation,
+                        0,      //Driver,
+                        0       //Discretionary
+                    );
+
+
+            self.addPopoverListener = function(){
+                $(function () {
+                    $('[data-toggle="popover"]').popover({
+                    content: function(){
+                        var index = this.getAttribute('popover-id');
+                        var item = self.filteredPOCList()[index];
+                        console.log("popover data, labatt branded glassware:",item.LabattBrandedGlassware());
+                        var content = "\
+                            <div>\
+                                <table class='table table-condensed table-bordered cap-program-table'>";
+                                    if (item.Region() !== "QUEBEC (Region)"){content += "\
+                                    <tr>\
+                                        <th>Labatt<br>Branded<br>Glassware</th>\
+                                        <th>Labatt Tap<br>Handles</th>\
+                                        <th>Food<br>Pairing<br>Feature<br>Price</th>\
+                                        <th>Custom<br>Drink List</th>\
+                                        <th>Full Power<br>Play pkg</th>\
+                                        <th>Weekly<br>Feature<br>PTC</th>\
+                                        <th># of Labatt<br>Draught<br>Lines</th>\
+                                        <th># of Total<br>Draught<br>Lines</th>\
+                                        <th>CAP<br>Eligible?</th>\
+                                    </tr>\
+                                    <tr class='glyphicon-green'>\
+                                        <td><span class='glyphicon" +
+                                        (item.LabattBrandedGlassware() ? " glyphicon-ok" : "") +
+                                        "' aria-hidden='true'></span></td>\
+                                        <td><span class='glyphicon" +
+                                        (item.LabattLargeTapHandles() ? " glyphicon-ok" : "") +
+                                        "' aria-hidden='true'></span></td>\
+                                        <td><span class='glyphicon" +
+                                        (item.FoodPairingFeature() ? " glyphicon-ok" : "") +
+                                        "' aria-hidden='true'></span></td>\
+                                        <td><span class='glyphicon" +
+                                        (item.CustomDrinkList() ? " glyphicon-ok" : "") +
+                                        "' aria-hidden='true'></span></td>\
+                                        <td><span class='glyphicon" +
+                                        (item.FullPowerPlayPackage() ? " glyphicon-ok" : "") +
+                                        "' aria-hidden='true'></span></td>\
+                                        <td><span class='glyphicon" +
+                                        (item.WeeklyFeaturePTC() ? " glyphicon-ok" : "") +
+                                        "' aria-hidden='true'></span></td>\
+                                        <td>" + item.LabattDraughtLines() +"</td>\
+                                        <td>" + item.TotalDraughtLines() + "</td>\
+                                        <td>" + item.CapEligibility() + "</td>\
+                                    </tr>"};
+
+
+                                    if (item.Region() === "QUEBEC (Region)"){content += "\
+                                    <tr>\
+                                        <th colspan='6' class='popover-table-header'><h4>Quebec Only</h4></th>\
+                                    </tr>\
+                                    <tr>\
+                                        <th>Sans PDA</th>\
+                                        <th>Secondaire 1-49%</th>\
+                                        <th>(50-50) 50%</th>\
+                                        <th>Priviligiee 50-99%</th>\
+                                        <th>Exclusif 100%</th>\
+                                        <th>CAP Eligible?</th>\
+                                    </tr>\
+                                    <tr class='glyphicon-green'>\
+                                        <td><span class='glyphicon "+
+                                        (item.QuebecCap() === "Sans PDA" ? "glyphicon-ok" : "") +
+                                        "' aria-hidden='true'></span></td>\
+                                        <td><span class='glyphicon"+
+                                        (item.QuebecCap() === "Secondaire 1-49%" ? "glyphicon-ok" : "") +
+                                        "' aria-hidden='true'></span></td>\
+                                        <td><span class='glyphicon "+
+                                        (item.QuebecCap() === "(50-50) 50%" ? "glyphicon-ok" : "") +
+                                        "' aria-hidden='true'></span></td>\
+                                        <td><span class='glyphicon "+
+                                        (item.QuebecCap() === "Privilegiee 50-99%" ? "glyphicon-ok" : "") +
+                                        "' aria-hidden='true'></span></td>\
+                                        <td><span class='glyphicon "+
+                                        (item.QuebecCap() === "Exclusif 100%" ? "glyphicon-ok" : "") +
+                                        "' aria-hidden='true'></span></td>\
+                                        <td>" + item.CapEligibility() + "</td>\
+                                    </tr>"};
+                            content += "</table></div>";
+                        console.log(content);
+                        return content;
+                    }
+                    });
+                });
+            }
+              
+            //Gets data from SF and loads it into ViewModel
+                self.loadTerritoryPOCList = function(AnnualTerritoryBudgetId){
+                self.POCListInitialLoad = true;
+                $('#loader-wrapper').css('display', 'block');
+                POCPlanningApp.POCList(AnnualTerritoryBudgetId, function(result, event){
+                     console.log('result: ', result);
+                    function ConvertChannel(Name){
+                        if(Name == "National Chain"){
+                            return "NKA";
+                        } else if (Name == "Regional Chain"){
+                            return "RKA";
+                        } else if (Name == "Local / Independent Chain"){
+                            return "KI";
+                        } else {
+                            return Name;
+                        }
+                    }
+                    console.log("POCPlannignDashboard Result", result);
+                    console.log("result.pocSpendList", result.pocSpendList);
+                    var flagForMissingData = false,
+                     incompleteRecordArray = [];
+                    result.pocSpendList.forEach(function(poc, i) {
+                        if ( !poc.TerritoryPOC ){
+                            console.log("this is a deal breaker, don't do anything, return false");
+                            console.log(poc.TerritoryPOC);
+                            flagForMissingData = true;
+                            return false;
+                        }else if( !poc.TerritoryPOC.Account__r ){
+                            console.log('Not a deal breaker but missing information for poc.TerritoryPOC.Account__r');
+                            console.log(poc.TerritoryPOC);
+                            flagForMissingData = true;
+                            incompleteRecordArray.push(poc);
+                        }
+
+                        if ( !!poc.TerritoryPOC.Account__r ){
+                            if ( !!poc.TerritoryPOC.Account__r.Labatt_Share_as_of_date__c ) {
+                                var labattShareDate = (poc.TerritoryPOC.Account__r.Labatt_Share_as_of_date__c);
+                                if (self.Labatt_Share_as_of_date() == null || self.Labatt_Share_as_of_date().isAfter(labattShareDate)) {
+                                    self.Labatt_Share_as_of_date(moment.utc(labattShareDate));
+                                    self.Labatt_Share_as_of_date_Display(moment.utc(labattShareDate).format('MMM Do[,] YYYY'));
+                                }
+
+                            if ( !!poc.TerritoryPOC.Account__r.R12_as_of_date__c ) {
+                                var R12ShareDate = (poc.TerritoryPOC.Account__r.R12_as_of_date__c);
+                                if (self.R12_as_of_date() == null || self.R12_as_of_date().isAfter(R12ShareDate)) {
+                                    self.R12_as_of_date(moment.utc(R12ShareDate));
+                                    self.R12_as_of_date_Display(moment.utc(R12ShareDate).format('MMM Do[,] YYYY'));
+                                }
+                            }
+                        }
+
+                        var accountNameAddress    = "Account__r is missing",
+                            accountState          = "Account__r is missing",
+                            accountR12LabattVol   = "Account__r is missing",
+                            accountMarketShare    = "Account__r is missing",
+                            accountCustomerType   = "Account__r is missing";
+                        if(!!poc.TerritoryPOC && !!poc.TerritoryPOC.Account__r && !!poc.TerritoryPOC.Account__r.Name){
+                            accountNameAddress  = poc.TerritoryPOC.Account__r.Name + ": " + poc.TerritoryPOC.Account__r.ShippingStreet + ", " + poc.TerritoryPOC.Account__r.ShippingCity;
+                            accountState        = poc.TerritoryPOC.Account__r.ShippingState;
+                            accountR12LabattVol = parent.cleanValue(poc.TerritoryPOC.Account__r.R12_Labatt_Vol__c);
+                            accountMarketShare  = parent.cleanValue(poc.TerritoryPOC.Account__r.Market_Share__c);
+                            accountCustomerType = poc.TerritoryPOC.Account__r.buzz_retail__Customer_Subtype__c;
+                        }
+
+                        var Channel = ConvertChannel(accountCustomerType);
+                          console.log('====about to call is back office',result.isBackOffice);
+                        if(!result.isBackOffice){
+                        self.territoryPOCList.push(new territoryPOC(
+                          self,                                                           //Reference for calling functions
+                          i,                                                              //Row Number
+                          poc.TerritoryPOC.Id,                                            //Id
+                          accountNameAddress,                                             //POCName
+                          accountState,                                                   //State
+                          poc.TerritoryPOC.Annual_Territory_Budget__r.Sales_Territory__r.lboc_Region__c,  //Region
+                          Channel,                                                                 //Channel
+                          accountR12LabattVol,        //R12LabattVol
+                          accountMarketShare,          //LabattShare
+                          parent.cleanValue(poc.TerritoryPOC.Target_Vol_HL__c),                    //TargetVol
+                          parent.cleanValue(poc.TerritoryPOC.Target_Spend_HL__c),                  //TargetSpend_HL
+                          poc.TerritoryPOC.Driver_Spend__c,                    //Driver
+                          poc.TerritoryPOC.Discretionary_Variable_Spend__c,    //DiscretionaryVariable
+                          poc.TerritoryPOC.Discretionary_Pre_Planning_Spend__c,  //DiscretionaryPrePlanning
+                          poc.TerritoryPOC.isUpdated__c,
+                          poc.TerritoryPOC.CAP_Eligibility__c,
+                          poc.TerritoryPOC.Custom_Drink_List__c,
+                          poc.TerritoryPOC.Food_Pairing_Feature__c,
+                          poc.TerritoryPOC.Full_Power_Play_Package__c,
+                          poc.TerritoryPOC.Labatt_Large_Tap_Handles__c,
+                          poc.TerritoryPOC.Labatt_Branded_Glassware__c,
+                          poc.TerritoryPOC.Weekly_Feature_PTC__c,
+                          poc.TerritoryPOC.Labatt_Draught_Lines__c,
+                          poc.TerritoryPOC.Budget_Year__c,
+                          poc.TerritoryPOC.Total_Draught_Lines__c,
+                          poc.TerritoryPOC.Quebec_CAP_criteria__c,
+                          result.isBackOffice
+                      ));
+                    }
+                    else             //AP Changes W-013969
+                    {
+                        self.territoryPOCList.push(new territoryPOC(
+                                        self,                                                           //Reference for calling functions
+                                        i,                                                              //Row Number
+                                        poc.TerritoryPOC.Id,                                            //Id
+                                        accountNameAddress,                                             //POCName
+                                        accountState,                                                   //State
+                                        poc.TerritoryPOC.Annual_Territory_Budget__r.Sales_Territory__c.lboc_District__c,  //Region
+                                        Channel,                                                                 //Channel
+                                        accountR12LabattVol,        //R12LabattVol
+                                        accountMarketShare,          //LabattShare
+                                        parent.cleanValue(poc.TerritoryPOC.Target_Vol_HL__c),                    //TargetVol
+                                        parent.cleanValue(poc.TerritoryPOC.Target_Spend_HL__c),                  //TargetSpend_HL
+                                        poc.TerritoryPOC.Driver_Spend__c,                    //Driver
+                                        poc.TerritoryPOC.Discretionary_Variable_Spend__c,    //DiscretionaryVariable
+                                        poc.TerritoryPOC.Discretionary_Pre_Planning_Spend__c,  //DiscretionaryPrePlanning
+                                        poc.TerritoryPOC.isUpdated__c,
+                                        poc.TerritoryPOC.CAP_Eligibility__c,
+                                        poc.TerritoryPOC.Custom_Drink_List__c,
+                                        poc.TerritoryPOC.Food_Pairing_Feature__c,
+                                        poc.TerritoryPOC.Full_Power_Play_Package__c,
+                                        poc.TerritoryPOC.Labatt_Large_Tap_Handles__c,
+                                        poc.TerritoryPOC.Labatt_Branded_Glassware__c,
+                                        poc.TerritoryPOC.Weekly_Feature_PTC__c,
+                                        poc.TerritoryPOC.Labatt_Draught_Lines__c,
+                                        poc.TerritoryPOC.Budget_Year__c,
+                                        poc.TerritoryPOC.Total_Draught_Lines__c,
+                                        poc.TerritoryPOC.Quebec_CAP_criteria__c,
+                            			result.isBackOffice                                      //AP Changes W013969               
+                                    ));
+                               }
+                    }
+
+                    if(flagForMissingData){
+                        // console.log("we're missing data show the dialog");
+                      self.parent.showIncompletePermissionsModal(incompleteRecordArray);
+                    }
+
+
+                        // console.log("list", self.territoryPOCList);
+                        //console.log('=====poc ts spend list===',poc.pocTASpendList);
+                    for (var j=0; j< poc.pocTASpendList.length; j++) {
+
+                        var Name = 'Brand Name Not Found';
+                        if(!!poc.pocTASpendList[j].BrandName ){
+                          Name = poc.pocTASpendList[j].BrandName.replace("&#39;", "'");
+                        }
+
+                        self.territoryPOCList()[self.territoryPOCList().length-1].TradeActivationBrandArray.push(new TerritoryPOCTABrand(
+                            poc.pocTASpendList[j].BrandId,   //Id,
+                            Name,   //Brand,
+                            parent.cleanValue(poc.pocTASpendList[j].Driver),    //Driver,
+                            parent.cleanValue(poc.pocTASpendList[j].Discretionary)  //Discretionary
+                        ));
+                        
+                    }
+                        //console.log('=====poc ts pocUserProgramList list===',poc.pocUserProgramList);
+                        if(poc.pocUserProgramList != undefined){
+                        for (var j=0; j< poc.pocUserProgramList.length; j++) {    //W-014033
+                         self.territoryPOCList()[self.territoryPOCList().length-1].TradeActivationUserProgramArray.push(new TerritoryPOCTAUserProgram(
+                            poc.pocUserProgramList[j].programId,
+                            poc.pocUserProgramList[j].programName,
+                            poc.pocUserProgramList[j].programSpend
+                        ));
+                      }
+                      }
+                });
+
+                for(var i = 0; i<result.BrandOptions.length; i++){
+
+                    var Name = "TBD";
+                    if( result.BrandOptions[i].hasOwnProperty('Name') === true){
+                        Name = result.BrandOptions[i].Name.replace("&#39;", "'");
+                    }
+
+                    self.territoryBrandOptions.push(new SelectOption(
+                        Name,
+                        result.BrandOptions[i].Id
+                    ));
+                }
+
+                for(var i=0; i< result.channelSet.length; i++){
+                    var ChannelName = ConvertChannel(result.channelSet[i]);
+                    self.territoryChannelOptions.push(new SelectOption(ChannelName, ChannelName));
+                }
+
+                for(var i=0; i<self.territoryPOCList().length; i++){
+                    self.territoryPOCList()[i].sumTradeActivation();
+                }
+
+                self.updateTerritoryFooter();
+                $('#loader-wrapper').css('display', 'none');
+                self.POCListInitialLoad = false;
+                parent.ApplyDashboardBinding();
+              });
+              self.territoryPOCList.removeAll();
+              self.territoryBrandOptions.removeAll();
+              self.territoryBrandOptions.push(new SelectOption("All", "All"));
+              self.territoryChannelOptions.removeAll();
+              self.territoryChannelOptions.push(new SelectOption("All", "All"));
+            }
+
+            self.sumTargetVol = function(){
+                var total=0;
+                for(var i=0; i<self.territoryPOCList().length; i++){
+                    if(self.territoryPOCList()[i].TargetVol()!=null && self.territoryPOCList()[i].Channel() == "KI"){
+                        total += parent.cleanValue(self.territoryPOCList()[i].TargetVol());
+                    }
+                }
+                parent.POCBudgetSummary.BudgetSummary.TargetVolume(total);
+                self.updateTerritoryFooter();
+            }
+
+            self.updateTerritoryFooter = function(){
+                var TargetVol = 0;
+                var TradeActivation = 0;
+                var Driver = 0;
+                var Discretionary = 0;
+                var TargetPOCSpend = 0;
+                
+                for(var i=0; i<self.territoryPOCList().length; i++){
+                    if(self.territoryPOCList()[i].show()){
+                        //console.log('====poc list===',self.territoryPOCList()[i]);
+                        TargetVol += parent.cleanValue(self.territoryPOCList()[i].TargetVol());
+                        TradeActivation += parent.cleanValue(self.territoryPOCList()[i].TradeActivation());
+                        Driver += parent.cleanValue(self.territoryPOCList()[i].Driver());
+                        Discretionary += parent.cleanValue(self.territoryPOCList()[i].Discretionary());
+                        TargetPOCSpend += parent.cleanValue(self.territoryPOCList()[i].TargetPOCSpend());
+                    }
+                }
+                self.TerritoryFooter.TargetVol(TargetVol);
+                self.TerritoryFooter.TradeActivation(TradeActivation);
+                self.TerritoryFooter.Driver(Driver);
+                self.TerritoryFooter.Discretionary(Discretionary);
+                self.TerritoryFooter.TargetPOCSpend(TargetPOCSpend);
+            }
+
+            //Load Code
+            self.loadTerritoryPOCList(parent.POCBudgetSummary.BudgetSummary.Id());
+
+            self.sortTerritoryPOCList = function(param){
+                var orderBy;
+                if(self.territoryPOCSort[param]() == "fa-sort"){
+                    self.territoryPOCSort[param]("fa-sort-asc");
+                    orderby = "asc";
+                } else if(self.territoryPOCSort[param]() == "fa-sort-asc"){
+                    self.territoryPOCSort[param]("fa-sort-desc");
+                    orderby = "desc";
+                } else if(self.territoryPOCSort[param]() == "fa-sort-desc"){
+                    self.territoryPOCSort[param]("fa-sort-asc");
+                    orderby = "asc";
+                }
+
+                for(var x in self.territoryPOCSort){
+                    if(x != param){
+                        self.territoryPOCSort[x]("fa-sort");
+                    }
+                }
+
+                self.territoryPOCList.sort(function(a,b){
+                    return sortFunction(a, b, param, orderby);
+                });
+                rowNumFunction();
+            }
+
+            self.territoryPOCNameFilter.subscribe(function(){
+                if(self.selectedTerritoryChannel().Value == "All"){
+                    var re = new RegExp(self.territoryPOCNameFilter(), "i");
+                    for(var i=0; i<self.territoryPOCList().length; i++ ){
+                        if(self.territoryPOCList()[i].POCName().search(re)==-1){
+                            self.territoryPOCList()[i].show(false);
+                        } else {
+                            self.territoryPOCList()[i].show(true);
+                        }
+                    }
+                } else {
+                    self.POCNameChannelFilter();
+                }
+                rowNumFunction();
+                self.updateTerritoryFooter();
+                self.updateFilterCriteria();
+            });
+
+            self.selectedTerritoryChannel.subscribe(function(){
+                self.POCFilter();
+            });
+
+            self.selectedTerritoryBrand.subscribe(function(){
+                self.POCFilter();
+                self.selectedTerritoryBrandValue(
+                    function(){
+                        if(typeof self.selectedTerritoryBrand() != "undefined"){
+                            return self.selectedTerritoryBrand().Value;
+                        }else {
+                            return "All";
+                        }
+                    }()
+                );
+            });
+
+           
+            
+            self.updateFilterCriteria = function(){
+                var filterCriteriaTemp = "";
+                if (self.territoryPOCNameFilter()){
+                    var temp = "POC Name: " + self.territoryPOCNameFilter();
+                    if(filterCriteriaTemp){
+                        filterCriteriaTemp += "; " + temp
+                    } else{
+                        filterCriteriaTemp += temp
+                    }
+                }
+                if (typeof self.selectedTerritoryChannel() != "undefined" &&
+                    self.selectedTerritoryChannel().Value != "All"){
+                    var temp = "Channel: " + self.selectedTerritoryChannel().Name;
+                    if(filterCriteriaTemp){
+                        filterCriteriaTemp += "; " + temp
+                    } else{
+                        filterCriteriaTemp += temp
+                    }
+                }
+
+                if (typeof self.selectedTerritoryBrand() != "undefined" &&
+                    self.selectedTerritoryBrand().Value != "All"){
+                    var temp = "Brand: " + self.selectedTerritoryBrand().Name;
+                    if(filterCriteriaTemp){
+                        filterCriteriaTemp += "; " + temp
+                    } else{
+                        filterCriteriaTemp += temp
+                    }
+                }
+
+                self.filterCriteria(filterCriteriaTemp);
+            }
+
+
+            self.POCFilter = function(){
+                var territoryPOCListLength = self.territoryPOCList().length;
+                for(var i=0; i < territoryPOCListLength; i++ ){
+                    include = true;
+                    var re = new RegExp(self.territoryPOCNameFilter(), "i");
+
+                    //POC Name Filter
+                    if(self.territoryPOCList()[i].POCName().search(re)==-1){
+                        include = false;
+                    }
+
+                    //Channel Filter
+                    if(include && typeof self.selectedTerritoryChannel() != "undefined"
+                        && self.selectedTerritoryChannel().Value != "All"
+                        && self.territoryPOCList()[i].Channel() != self.selectedTerritoryChannel().Value){
+                        include = false;
+                    }
+
+                    //Brand Filter
+                    if(include && typeof self.selectedTerritoryBrand() != "undefined"
+                        && self.selectedTerritoryBrand().Value != "All"){
+                        var show = false
+                        for(var j = 0; j<self.territoryPOCList()[i].TradeActivationBrandArray().length; j++){
+                            if(self.territoryPOCList()[i].TradeActivationBrandArray()[j].Id() == self.selectedTerritoryBrand().Value){
+                                self.territoryPOCList()[i].TradeActivationBrandArray()[j].show(true);
+                                show = true;
+                            } else {
+                                self.territoryPOCList()[i].TradeActivationBrandArray()[j].show(false);
+                            }
+                        }
+                        self.territoryPOCList()[i].sumTradeActivation();
+                        include = show;
+                    } else if(include && typeof self.selectedTerritoryBrand() != "undefined"
+                        && self.selectedTerritoryBrand().Value == "All"){
+                        for(var j = 0; j<self.territoryPOCList()[i].TradeActivationBrandArray().length; j++){
+                            self.territoryPOCList()[i].TradeActivationBrandArray()[j].show(true);
+                        }
+                        self.territoryPOCList()[i].sumTradeActivation();
+                    }
+                    self.territoryPOCList()[i].show(include);
+                }
+                rowNumFunction();
+                self.updateTerritoryFooter();
+                self.updateFilterCriteria();
+            }
+
+            rowNumFunction = function(){
+                for(var i = 0; i < self.territoryPOCList().length; i++ ){
+                    self.territoryPOCList()[i].i(i);
+                }
+            }
+
+            self.clearSearch = function(field){
+                if(typeof field() != 'undefined'){
+                    field(undefined);
+                }
+            }
+
+            self.loadPOCNavigation = function(i){
+                parent.POCList = ko.observableArray();
+                for(var j = 0; j<self.territoryPOCList().length; j++){
+                    if(self.territoryPOCList()[j].show()){
+                        parent.POCList.push(self.territoryPOCList()[j]);
+                    }
+                }
+
+                parent.POCListIndex = i;
+                parent.POCListIndexObservable(i);
+                parent.FilterCriteria = self.filterCriteria();
+                parent.setQueryString("TradeActivation", parent.UrlParameters.Year,
+                    parent.UrlParameters.TerritoryId, self.territoryPOCList()[i].Id());
+                parent.loadAppPage();
+                parent.POCBudgetSummary.measureHeaderBars();
+            }
+        }
+
+        function territoryPOCSort(parent){
+            var self = this;
+            self.POCName = ko.observable("fa-sort");
+            self.Channel = ko.observable("fa-sort");
+            self.R12LabattVol = ko.observable("fa-sort");
+            self.LabattShare = ko.observable("fa-sort");
+            self.TargetVol = ko.observable("fa-sort");
+            self.Spend_HL = ko.observable("fa-sort");
+            self.POCSpend = ko.observable("fa-sort");
+            self.TradeActivation = ko.observable("fa-sort");
+            self.Driver = ko.observable("fa-sort");
+            self.Discretionary = ko.observable("fa-sort");
+            
+            
+        }
+
+        function territoryPOC(parent, i, Id, POCName, State, Region, Channel, R12LabattVol, LabattShare, TargetVol, TargetSpend_HL, Driver, DiscretionaryVariable, DiscretionaryPrePlanning, isUpdated, CapEligibility, CustomDrinkList, FoodPairingFeature, FullPowerPlayPackage, LabattLargeTapHandles, LabattBrandedGlassware, WeeklyFeaturePTC, LabattDraughtLines, PlanYear, TotalDraughtLines, QuebecCap,isBackOffice){
+            var self = this;
+            self.i = ko.observable(i);
+            self.Id = ko.observable(Id);
+            self.POCName = ko.observable(POCName);
+            self.State = ko.observable(State);
+            self.Region = ko.observable(Region);
+            self.Channel = ko.observable(Channel);
+            self.R12LabattVol = ko.observable(R12LabattVol);
+            self.LabattShare = ko.observable(LabattShare);
+            self.TargetVol = ko.observable(TargetVol);
+            self.OldTargetVol = ko.observable(TargetVol);
+            self.TargetSpend_HL = ko.observable(TargetSpend_HL);
+            self.OldTargetSpend_HL = ko.observable(TargetSpend_HL);
+            self.TradeActivation = ko.observable(0);
+            self.Driver = ko.observable(Driver);
+            self.CapEligibility = ko.observable(CapEligibility);
+            self.CustomDrinkList = ko.observable(CustomDrinkList);
+            self.FoodPairingFeature = ko.observable(FoodPairingFeature);
+            self.FullPowerPlayPackage = ko.observable(FullPowerPlayPackage);
+            self.LabattLargeTapHandles = ko.observable(LabattLargeTapHandles);
+            self.LabattBrandedGlassware = ko.observable(LabattBrandedGlassware);
+            self.WeeklyFeaturePTC = ko.observable(WeeklyFeaturePTC);
+            self.LabattDraughtLines = ko.observable(LabattDraughtLines);
+            self.PlanYear = ko.observable(PlanYear);
+            self.TotalDraughtLines = ko.observable(TotalDraughtLines);
+            self.QuebecCap = ko.observable(QuebecCap);
+            //console.log('====is back office in POC List',isBackOffice);
+			self.isBackOffice=ko.observable(isBackOffice);
+            //console.log('====is back office in POC List',self.isBackOffice());
+
+
+            self.IsUpdated = ko.observable(isUpdated);
+            self.initIsUpdated = ko.observable(isUpdated);
+            self.IsUpdated.subscribe(function() {
+                if (self.IsUpdated() && !self.initIsUpdated()) {
+                    POCPlanningApp.setAnnuaLPOCBudgetPlanToUpdated(self.Id(), function() {});
+                }
+            });
+
+            
+            self.planningDateCheck = ko.computed(function(){
+                var MyDate = new Date().getTime();
+                var planningDateListWithBudgetYearOOH = [];
+                var planningDateListWithBudgetYearIH = [];
+                var flagOOH = false;
+                var flagIH = false;
+                for(var i=0; i<planningDateListDiscretionary.length ;i++){
+                    if(plan == '{!$Label.Out_of_Home}' && planningDateListDiscretionary[i].Budget_Year__c == budgetYear){
+                        planningDateListWithBudgetYearOOH.push(planningDateListDiscretionary[i]);
+                    }
+                }
+                for(var i=0; i<planningDateListDiscretionaryIH.length ;i++){
+                    if(plan == '{!$Label.In_Home_IH}' && planningDateListDiscretionaryIH[i].Budget_Year__c == budgetYear){
+                        planningDateListWithBudgetYearIH.push(planningDateListDiscretionaryIH[i]);
+                    }
+                }
+                console.log('planningDateListWithBudgetYearOOHdash',planningDateListWithBudgetYearOOH);
+                console.log('planningDateListWithBudgetYearIHdash',planningDateListWithBudgetYearIH);
+                if(plan == '{!$Label.Out_of_Home}'){
+                    if(planningDateListWithBudgetYearOOH.length > 0 ){
+                        for(var i=0; i<planningDateListWithBudgetYearOOH.length ;i++){
+                            if(approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}' ){
+                                console.log('return false for planning window1');
+                                return true;
+                                //console.log('return false for planning window1.0');
+                            }else{
+                                if(planningDateListWithBudgetYearOOH[i].Plan_Start_Date__c < MyDate && planningDateListWithBudgetYearOOH[i].Plan_End_Date__c > MyDate ){
+                                    console.log('return false for planning window2');
+                                    flagOOH = false;
+                                    return false;
+                                    
+                                } else{
+                                    flagOOH = true;
+                                }
+                            } 
+                        }
+                    }else{
+                        return true;
+                    }  
+                }
+                if(flagOOH == true){
+                    return true;
+                }
+                if(plan == '{!$Label.In_Home_IH}'){
+                    if(planningDateListWithBudgetYearIH.length > 0 ){
+                        for(var i=0; i<planningDateListWithBudgetYearIH.length ;i++){
+                            if(approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}' ){
+                                console.log('return false for planning window1');
+                                return true;
+                                console.log('return false for planning window1.0');
+                            }else{
+                                if(planningDateListWithBudgetYearIH[i].Plan_Start_Date__c < MyDate && planningDateListWithBudgetYearIH[i].Plan_End_Date__c > MyDate ){
+                                    console.log('return false for planning window2');
+                                    flagIH = false;
+                                    return false;
+                                    
+                                } else{
+                                    flagIH = true;
+                                }
+                            } 
+                        }
+                    }else{
+                        return true;
+                    } 
+                }
+                if(flagIH == true){
+                    return true;
+                }
+            }); 
+            
+            
+            self.DiscretionaryVariable = ko.observable(DiscretionaryVariable);
+            self.DiscretionaryPrePlanning = ko.observable(DiscretionaryPrePlanning);
+            self.Discretionary = ko.computed(function(){                //AP Changes -w-013969
+                //console.log('===f idcretionsry$$$$$'+self.DiscretionaryVariable());
+                var discretionary=parseInt(self.DiscretionaryVariable()) + parseInt(self.DiscretionaryPrePlanning());
+                if(isNaN(discretionary))
+                    {
+                        discretionary=0;
+                        }
+                return discretionary;
+            });
+
+            self.TargetPOCSpend = ko.computed(function(){
+                return self.TargetVol() * self.TargetSpend_HL();
+            });
+
+            self.POCSpend = ko.computed(function(){            //AP CHanges -W-013969
+                var POCSpend=self.TradeActivation()  + self.Discretionary();
+                //var POCSpend=self.TradeActivation() + self.Driver() + self.Discretionary();          // Updated by AP  
+                if(isNaN(POCSpend)){
+                     POCSpend=0;
+                    }
+                return POCSpend;
+            });
+
+            self.Spend_HL = ko.computed(function(){
+                var spend_return = self.POCSpend()/parent.parent.cleanValue(self.TargetVol());
+                if(isNaN(spend_return)){
+                    spend_return = 0;
+                }
+                return spend_return;
+            });
+
+            self.toggleCustomizableModal = function(show, title, body) {
+                if (show && !self.initialLoad) {
+                    parent.parent.loadDialog(title, body);
+                    $('#modalGeneric').modal();
+                }
+            }
+
+            //Trade Activation
+            self.TradeActivationBrandIdSet = ko.observableArray();
+            self.TradeActivationBrandArray = ko.observableArray();
+            self.TradeActivationUserProgramArray= ko.observableArray();
+            //Driver
+
+            //Discretionary
+            self.Variable = ko.observable();
+
+            self.rowOdd = ko.computed(function(){
+                return Math.abs(self.i() % 2) == 1;
+            });
+            self.show = ko.observable(true);
+            self.displayItemDetails = ko.observable(false);
+
+            self.toggleDisplayItemDetails = function(){
+                self.displayItemDetails(!self.displayItemDetails());
+            }
+
+            self.saved = ko.observable(true);
+
+            self.sumTradeActivation = function(){
+                var total = 0;
+                for(var i = 0; i< self.TradeActivationBrandArray().length; i++){
+                    if(self.TradeActivationBrandArray()[i].show()){
+                        //console.log('---in a brand array---',self.TradeActivationBrandArray()[i].Spend());
+                        total += window.cleanValue(self.TradeActivationBrandArray()[i].Spend());
+                    }
+                }
+                //console.log('====back Office ===',self.isBackOffice());
+                // if(self.isBackOffice()){
+                //self.TradeActivation(window.cleanValue(0)); 
+                // }
+                // else{
+                  self.TradeActivation(window.cleanValue(total));  
+                //}
+                
+            }
+
+            self.updateTerritoryPOC = function(){
+                self.saved(false);
+
+                POCPlanningApp.UpdateTerritoryPOC(self.Id(), parent.parent.cleanValue(self.TargetVol()), parent.parent.cleanValue(self.TargetSpend_HL()), function(result, event){
+                    self.saved(result);
+                });
+            }
+
+            self.TargetVol.subscribe(function() {
+                var regex = new RegExp('^[0-9]+$');
+                if ( regex.test( self.TargetVol() ) ) {
+                    parent.sumTargetVol();
+                    self.updateTerritoryPOC();
+                } else if ( regex.test( self.OldTargetVol() ) ) {
+                    self.toggleCustomizableModal(true, '{!$Label.Numeric_Value_Only}', '');
+                    var oldValue = self.OldTargetVol();
+                    self.TargetVol(oldValue);
+                    self.OldTargetVol(oldValue);
+                } else {
+                    self.toggleCustomizableModal(true, '{!$Label.Numeric_Value_Only}', '');
+                    self.TargetVol(0);
+                }
+            });
+
+            self.TargetVol.subscribe(function() {
+                var regex = new RegExp('^[0-9]+$');
+                if (regex.test(self.TargetVol())) {
+                    self.OldTargetVol(self.TargetVol());
+                }
+            }, null, 'beforeChange');
+
+            self.TargetSpend_HL.subscribe(function() {
+                var regex = new RegExp('^[0-9]+$');
+                var passing = true;
+                var newValue = '' + self.TargetSpend_HL() + '';
+
+                if (newValue.indexOf('.') > -1) {
+                    if (!regex.test(newValue.split('.')[1]) || !regex.test(newValue.split('.')[0])) {
+                        passing = false;
+                    } else if (newValue.split('.')[1].length > 2) {
+                        var value = newValue.split('.');
+                        value = value.substr(0,2);
+                        self.TargetSpend_HL(parseInt(value.join('.')));
+                        return;
+                    }
+                } else if (!regex.test(newValue)) {
+                    passing = false;
+                }
+                if (passing) {
+                    parent.updateTerritoryFooter();
+                    self.updateTerritoryPOC();
+                } else if ( regex.test( self.OldTargetSpend_HL() ) ) {
+                    self.toggleCustomizableModal(true, '{!$Label.Numeric_Value_Only}', '');
+                    var oldValue = self.OldTargetSpend_HL();
+                    self.TargetSpend_HL(oldValue);
+                    self.OldTargetSpend_HL(oldValue);
+                } else {
+                    self.toggleCustomizableModal(true, '{!$Label.Numeric_Value_Only}', '');
+                    self.TargetSpend_HL(0);
+                }
+            });
+
+            self.TargetSpend_HL.subscribe(function() {
+                var regex = new RegExp('^[0-9]+$');
+                if (regex.test(self.TargetSpend_HL())) {
+                    self.OldTargetSpend_HL(self.TargetSpend_HL());
+                }
+            }, null, 'beforeChange');
+        }
+
+        function TerritorySummaryFooter(parent, TargetVol, TradeActivation, Driver, Discretionary, TargetPOCSpend){
+            var self = this;
+            self.TargetVol = ko.observable(TargetVol);
+
+            self.TradeActivation = ko.observable(TradeActivation);
+            self.Driver = ko.observable(Driver);
+            self.Discretionary = ko.observable(Discretionary);
+
+            self.TargetPOCSpend = ko.observable(TargetPOCSpend);
+
+            self.POCSpend = ko.computed(function(){
+                // return (window.cleanValue(self.TradeActivation()) + window.cleanValue(self.Driver()) + window.cleanValue(self.Discretionary())).toFixed(2);
+                return (window.cleanValue(self.TradeActivation()) + + window.cleanValue(self.Discretionary())).toFixed(2);  // Updaated By AP 
+            });
+
+            self.Spend_HL = ko.computed(function(){
+                return (window.cleanValue(self.POCSpend()) / window.cleanValue(self.TargetVol())).toFixed(2);
+            });
+
+            self.TargetSpend_HL = ko.computed(function(){
+                return (window.cleanValue(self.TargetPOCSpend())/window.cleanValue(self.TargetVol())).toFixed(2);
+            });
+          }
+
+        function TerritoryPOCTABrand(Id, Brand, Driver, Discretionary){
+            var self = this;
+            self.Id = ko.observable(Id);
+            self.Brand = ko.observable(Brand);
+            self.Driver = ko.observable(Driver);
+            self.Discretionary = ko.observable(Discretionary);
+            self.Spend = ko.computed(function(){
+                return (window.cleanValue(self.Driver()+ self.Discretionary() ));//+ self.Discretionary()
+            });
+            self.show = ko.observable(true);
+        }
+    function TerritoryPOCTAUserProgram(Id, program, spend){
+            var self = this;
+            self.Id = ko.observable(Id);
+            self.program = ko.observable(program);
+            self.spend = ko.observable(spend);
+        }
+
+
+    </script>
+
+
+
+    <div class="POCDashboard" id="POCPlanningDashboardId">
+
+
+
+        <div data-bind="style: {display: selectedTerritoryBrandValue() != 'All' ? 'block': 'none'}" class="alert alert-filter" role="alert">
+            {!$Label.Filter_TA_Brand_Message}
+        </div>
+        <div class="dashboard-container">
+            <div class="th-background">
+                <div class="clearfix"></div>
+            </div>
+            <table class="poc-striped table dashboard-table">
+                <thead>
+                    <tr>
+                        <th>
+                            {!$Label.POC_Name}
+                            <div>
+                                <span data-bind="click: sortTerritoryPOCList.bind($data, 'POCName')">
+                                    {!$Label.POC_Name}
+                                    <span data-bind="css: territoryPOCSort.POCName" class="fa"/>
+                                </span>
+                                <br/>
+                                <div class="btn-group absolute-100 search">
+                                    <input data-bind="textInput: territoryPOCNameFilter" type="search" />
+                                    <span data-bind="click: clearSearch(territoryPOCNameFilter), style: {display: (typeof territoryPOCNameFilter() == 'undefined' ) ? 'none' : 'inline'}" class="fa fa-remove iconSpan"/>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            {!$Label.Channel}
+                            <div>
+                                <span data-bind="click: sortTerritoryPOCList.bind($data, 'Channel')" style="display: block; padding-bottom: 5px;" >
+                                    {!$Label.Channel}
+                                    <span data-bind="css: territoryPOCSort.Channel" class="fa"/>
+                                </span>
+                                <select data-bind="options: territoryChannelOptions, optionsText: 'Name', value: selectedTerritoryChannel" style="display:block;" />
+                            </div>
+                        </th>
+                        <th>
+                            {!$Label.Labatt_Share}
+                            <div data-bind="click: sortTerritoryPOCList.bind($data, 'LabattShare')" >
+                                {!$Label.Labatt_Share}
+                                <span data-bind="css: territoryPOCSort.LabattShare" class="fa"/>
+                                <br/>
+                                <span class="light-font"> {!$Label.As_of} <br/><span/>Jul 31st,2019</span>
+                            </div>
+                        </th>
+                        <th>
+                            {!$Label.R12_Labatt_Vol}
+                            <div data-bind="click: sortTerritoryPOCList.bind($data, 'R12LabattVol')">
+                                {!$Label.R12_Labatt_Vol}
+                                <span data-bind="css: territoryPOCSort.R12LabattVol" class="fa"/>
+                                <br/>
+                                <span class="light-font"> {!$Label.As_of}<br/><span/>Jul 31st,2019</span> <!--data-bind="text: R12_as_of_date_Display" /-->
+                            </div>
+                        </th>
+                        <th>
+                            {!$Label.Target_Labatt_Volume}
+                            <div data-bind="click: sortTerritoryPOCList.bind($data, 'TargetVol')">
+                                {!$Label.Target_Labatt_Volume}
+                                <span data-bind="css: territoryPOCSort.TargetVol" class="fa"/>
+                            </div>
+                        </th>
+                        <th>
+                            {!$Label.Spend_HL}
+                            <div data-bind="click: sortTerritoryPOCList.bind($data, 'Spend_HL')">
+                                {!$Label.Spend_HL}
+                                <span data-bind="css: territoryPOCSort.Spend_HL" class="fa"/>
+                            </div>
+                        </th>
+                        <th>
+                            {!$Label.Spend_POC}
+                            <div data-bind="click: sortTerritoryPOCList.bind($data, 'POCSpend')">
+                                {!$Label.Spend_POC}
+                                <span data-bind="css: territoryPOCSort.POCSpend" class="fa"/>
+                            </div>
+                        </th>
+                        <th>
+                            {!$Label.Trade_Activation}
+                            <div>
+                                <span data-bind="click: sortTerritoryPOCList.bind($data, 'TradeActivation')">
+                                    {!$Label.Trade_Activation}
+                                    <span data-bind="css: territoryPOCSort.TradeActivation" class="fa"/>
+                                </span>
+                                <select id="desktopBrandOptions" data-bind="options: territoryBrandOptions, optionsText: 'Name', value: selectedTerritoryBrand" style="display:block;" />
+                            </div>
+                        </th>
+                       <!--- <th>  
+                            {!$Label.Driver_POCM_Forecast}
+                            <div data-bind="click: sortTerritoryPOCList.bind($data, 'Driver')">
+                           {!$Label.Driver_POCM_Forecast}
+                            </div>
+                            <span data-bind="css: territoryPOCSort.Driver" class="fa"/>
+                        </th> --->
+                        <th>
+                            {!$Label.Driver_POCM_Forecast}
+                            <div data-bind="click: sortTerritoryPOCList.bind($data, 'Discretionary')">
+                                {!$Label.Driver_POCM_Forecast}
+                                <span data-bind="css: territoryPOCSort.Discretionary" class="fa"/>
+                            </div>
+                        </th>
+                     <!--   <th>
+                            CAP Elligible?
+                            <div>
+                                CAP Elligible?
+                            </div>
+                        </th> -->
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: {data:filteredPOCList, afterRender:addPopoverListener}" class="POCDashboardItemsWrapper">
+                    <tr data-bind="if: show()">
+                        <td>
+                            <div data-bind="click: $parent.loadPOCNavigation.bind($data, i())" style="cursor: pointer">
+                                <a data-bind="html: POCName" class="POCName" /> <span data-bind="visible: IsUpdated" class="label label-success">Updated</span>
+                            </div>
+                        </td>
+                        <td><span data-bind="text: Channel"/></td>
+                        <td><span data-bind="text: LabattShare"/>%</td>
+                        <td><span data-bind="text: setupNumbers(R12LabattVol())"/></td>
+                        <td>
+                            <span data-bind="if: !Channel()" >
+                                N/A
+                            </span>
+                            <span data-bind="if: Channel()">
+                                <!-- <input data-bind="value: TargetVol, disable: $parent.parent.disableAppInput() || Channel() == 'RKA' || Channel() == 'NKA'" type="text"/> check here-->
+                                <input data-bind="value: TargetVol, disable: planningDateCheck || Channel() == 'RKA' || Channel() == 'NKA'" type="text"/>
+                            </span>
+                        </td>
+                        <td>
+                            <div class="nowrap">
+                                <span data-bind="if: TargetVol()!=0" >
+                                    <span data-bind="css: parent.parent.budgetStatus(TargetSpend_HL(), Spend_HL())">
+                                        $<span data-bind="text: setupNumbers(Spend_HL())"/>
+                                    </span>|
+                                </span>
+                                <span data-bind="if: TargetVol()!=0">
+                                    <!--  <input data-bind="value: TargetSpend_HL, disable: $parent.parent.disableAppInput()" type="text" style="display: inline-block; width: 60px; padding-left: 2px; padding-right: 2px;" /> -->
+                                    <input data-bind="value: TargetSpend_HL, disable: planningDateCheck" type="text" style="display: inline-block; width: 60px; padding-left: 2px; padding-right: 2px;" />
+                                    
+                                </span>
+                                <span data-bind="if: TargetVol()==0">
+                                    N/A
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <span data-bind="css: parent.parent.budgetStatus(TargetPOCSpend(), POCSpend())" >
+                                $<span data-bind="text: setupNumbers(POCSpend())"/>
+                            </span>
+                            <span class="Budget"  >
+                            | $<span data-bind="text: setupNumbers(TargetPOCSpend())"/>
+                            </span>
+                        </td>
+                        <td>$<span data-bind="text: setupNumbers(TradeActivation())"/></td>
+                       <!--- <td>   $<span data-bind="text: setupNumbers(Driver())" />  </td> -->
+                        <td data-bind="click: toggleDisplayItemDetails">
+                            $<span data-bind="text: setupNumbers(Discretionary() )" />
+                            <div data-bind="css: displayItemDetails() ? 'fa-chevron-up' : 'fa-chevron-down'" class="fa" style="float:right;"></div>
+                        </td>
+                        <!-- <td>
+<button data-bind="attr:{'popover-id': $index}, text:CapEligibility" type="button" class="btn btn-sm btn-default cap-popover" data-toggle="popover" data-placement="bottom" data-html="true" data-trigger="hover" data-container="body"></button>
+</td> -->
+                        
+                    </tr>
+                    <tr data-bind="if: displayItemDetails()">
+                        <td colspan="11" class="no-border">
+                            <div class="col-xs-12 col-lg-7 col-lg-offset-5">
+                                <table class="table table-bordered poc-details-table ">
+                                    <tr>
+                                        <td>
+                                            <table class="table " data-bind="foreach: TradeActivationBrandArray">
+                                                 <tr >
+                                                    	<td data-bind="text: Brand"></td>
+                                                        <td >$<span data-bind="text: Spend"/></td>
+                                                 </tr> 
+                                            </table>
+
+                                            <!-- not sure what this does
+                                            <div data-bind="foreach: TradeActivationBrandArray" class="POCRow POCLabel">
+                                                <div data-bind="text: Brand, css: $parent.rowOdd() ? 'POCRowOdd' : 'POCRowEven', if: show()" class="POCCell"/>
+                                            </div>
+                                            <div data-bind="foreach: TradeActivationBrandArray" class="POCRow">
+                                                <div data-bind="css: $parent.rowOdd() ? 'POCRowOdd' : 'POCRowEven', if: show()" class="POCCell">
+                                                    $<span data-bind="text: Spend"/>
+                                                </div>
+                                            </div>
+                                               -->
+                                        </td>
+                                        <td>
+                                            <table class="table" data-bind="foreach: TradeActivationUserProgramArray">   <!------W-014033---->
+                                              
+                                                <tr>
+                                                    <td data-bind="text: program"></td> 
+                                                    <td>$<span data-bind="text: spend"/></td> 
+                                                </tr>
+                                            </table>
+                                        </td>
+                                       
+
+                                        <td>
+                                            <table class="table">
+                                               
+                                                <tr>
+                                                    <td>{!$Label.Driver_POCM_Forecast}</td>
+                                                    <td>$<span data-bind="text: DiscretionaryVariable"/></td>
+                                                </tr>
+                                            </table>
+                                        </td>
+
+                                        
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+
+    </div>
+</apex:page>

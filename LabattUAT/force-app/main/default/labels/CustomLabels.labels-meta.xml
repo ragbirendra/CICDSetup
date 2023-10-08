@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>ABI_OP_ApexSideError</fullName>
+        <categories>for automate program items component</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ApexSideError</shortDescription>
+        <value>Error Occurred: Please contact your admin or try again!</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_AppravalStatusApproved</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_AppravalStatusApproved</shortDescription>
+        <value>Approved</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_ApprovalLabel</fullName>
+        <categories>for preview program items component</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ApprovalLabel</shortDescription>
+        <value>Data has been successfully send for Approval!</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_ApprovalStatusFailed</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ApprovalStatusFailed</shortDescription>
+        <value>Failed</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_ApprovedStatus</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ApprovedStatus</shortDescription>
+        <value>Approved</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_ApprovedStatusforPOCP</fullName>
+        <categories>for preview program items component</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ApprovedStatusforPOCP</shortDescription>
+        <value>Program should be in Approved Status for Push to POC Planning</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_BrandNameNotNull</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_BrandNameNotNull</shortDescription>
+        <value>BrandName name should be string and cannot be null. Please check Row:</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_BudgetLoadMessage</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_BudgetLoadMessage</shortDescription>
+        <value>Budget load/Update process is initiated, Please contact Myriam Wilhelmy for Status</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_BusAndYear</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_BusAndYear</shortDescription>
+        <value>Please select year and Bussiness line.</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_BusinessLine</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_BusinessLine</shortDescription>
+        <value>Business Line cannot be Empty. Please check Row:</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_BusinessLineSelection</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_BusinessLineSelection</shortDescription>
+        <value>Business Line either should be Out of Home or In Home,</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_BusinessLineUniform</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_BusinessLineUniform</shortDescription>
+        <value>Business line should be same for all Records uploaded. Either Out of Home or In Home</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_BusinessLineVals</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_BusinessLineVals</shortDescription>
+        <value>Please put correct value for Business Line. Values can be Out of Home or In Home. Please check Row:</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_CompletedStatus</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_CompletedStatus</shortDescription>
+        <value>Completed</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_DataSaveSuccessfully</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_DataSaveSuccessfully</shortDescription>
+        <value>Data Saved Successfully</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_DataSavedLabel</fullName>
+        <categories>for automate program items component</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_DataSavedLabel</shortDescription>
+        <value>Data Saved Successfully!</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_DiscretionaryType</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_DiscretionaryType</shortDescription>
+        <value>KI Volume and Discretionary</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_DriverType</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_DriverType</shortDescription>
+        <value>Driver POCM Forecast</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_EndDateValidation</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_EndDateValidation</shortDescription>
+        <value>Incorrect End Date : Please Use MM/DD/YYYY Date format,</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_FailedStatus</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_FailedStatus</shortDescription>
+        <value>Failed</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_FailedToPush</fullName>
+        <categories>for automate  program items component</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_FailedToPush</shortDescription>
+        <value>Failed to push data to Onplan. Please try again or contact your admin!</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_FileValidated</fullName>
+        <categories>for automate  program items component</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_FileValidated</shortDescription>
+        <value>File has been successfully Validated. Kindly proceed to Save Data!</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_FillAllValue</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_FillAllValue</shortDescription>
+        <value>Please Fill all Value.</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_FullPrice</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_FullPrice</shortDescription>
+        <value>Full Price to rep cannot be null and should have only number values. Please check Row:</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_IHBusinessLine</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_IHBusinessLine</shortDescription>
+        <value>In Home (IH)</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_IncorrectFileFormate</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_IncorrectFileFormate</shortDescription>
+        <value>File format is incorrect. Please use the correct file template and upload again!</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_IncorrectSAPID</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_IncorrectSAPID</shortDescription>
+        <value>Incorrect SAP Id. Please check row  :</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_ItemClassification</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ItemClassification</shortDescription>
+        <value>Please add Item Classification. Please check Row:</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_ItemClassificationVals</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ItemClassificationVals</shortDescription>
+        <value>Please put correct values for Item Classification i.e. Driver,Visibility or Promotional. Please check Row:</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_ItemType</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ItemType</shortDescription>
+        <value>Item Type cannot be Empty. Please check Row:&quot;</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_LoadedStatus</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_LoadedStatus</shortDescription>
+        <value>Loaded</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_MenuCategory</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_MenuCategory</shortDescription>
+        <value>Menu category cannot be Empty. Please check Row:&quot;</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_NAN_SAPPriceYearQuantity</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_NAN_SAPPriceYearQuantity</shortDescription>
+        <value>Item SAP Number ,Price ,Year and quantity should not contain any Character.</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_NoRecordFound</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_NoRecordFound</shortDescription>
+        <value>No record found.</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_NotNullPlanningED</fullName>
+        <categories>for automate  program items component</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_NotNullPlanningED</shortDescription>
+        <value>Planning End Date cannot be null and use format MM/DD/YYYY. Please check Row:</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_NotNullPlanningSD</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_NotNullPlanningSD</shortDescription>
+        <value>Planning Start Date cannot be null and use format MM/DD/YYYY. Please check Row:</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_NotNullPrgEndDate</fullName>
+        <categories>for automate  program items component</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_NotNullPrgEndDate</shortDescription>
+        <value>Program End Date cannot be null and use format MM/DD/YYYY. Please check Row:&quot;</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_NotNullPrgstartDate</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_NotNullPrgstartDate</shortDescription>
+        <value>Program Start Date cannot be null and use format MM/DD/YYYY. Please check Row</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_OOHBusinessLine</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_OOHBusinessLine</shortDescription>
+        <value>Out of Home (OOH)</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_POCP_ExcelFormatError</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_POCP_ExcelFormatError</shortDescription>
+        <value>File format is incorrect. Please use the correct file templete and upload again.
+for Reference you can download the Sample file.</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_PlanningEndDateandStartDate</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_PlanningEndDateandStartDate</shortDescription>
+        <value>Planning Start Date should be less than Planning End Date. Please check row;</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_PrgStartDateEndDate</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_PrgStartDateEndDate</shortDescription>
+        <value>Program Start Date should be less than Program End Date. Please check row;</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_ProductCCFile</fullName>
+        <categories>Link to download Product CC File</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ProductCCFile</shortDescription>
+        <value>https://naz--UAT.cs60.my.salesforce.com/sfc/p/3C0000004gHS/a/3C00000002dj/BW7Hh.o7FBstzRSE00ZGtlxh9IPZfHqvKMetBFku0KY</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_ProductName</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ProductName</shortDescription>
+        <value>Product Name cannot be Empty. Please check Row:</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_ProgramNameCannotBeNull</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ProgramNameCannotBeNull</shortDescription>
+        <value>Program Name cannot be null. Please check Row:</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_ProgramNameStatus</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ProgramNameStatus</shortDescription>
+        <value>Please Select  Business Line , Year ,Program Name  and  Status</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_PushToPOCPOnApproval</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_PushToPOCPOnApproval</shortDescription>
+        <value>Records successfully Approved! Now you can proceed to Push to POCP!</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_Quantity</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_Quantity</shortDescription>
+        <value>Quantity should only be number values. Please check Row:</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_RecordSavedRefresh</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_RecordSavedRefresh</shortDescription>
+        <value>Records Saved Successfully ,Please refresh to See Your Changes!</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_RecordsRejected</fullName>
+        <categories>for automate  program items component</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_RecordsRejected</shortDescription>
+        <value>Selected Program Items has been Rejected!</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_RejectedStatus</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_RejectedStatus</shortDescription>
+        <value>Rejected</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_RejectionComment</fullName>
+        <categories>for preview program items component</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_RejectionComment</shortDescription>
+        <value>Please enter rejection comments in comment section.</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_SAPID</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_SAPID</shortDescription>
+        <value>Either enter SAP or Temp Item Number. Please check Row:</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_SAPNumberIncorrectValidation</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_SAPNumberIncorrectValidation</shortDescription>
+        <value>Incorrect SAP item number.</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_SAPorTEMPValidation</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_SAPorTEMPValidation</shortDescription>
+        <value>Please insert Either SAP item number or Temp Item Number.</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_ServerError</fullName>
+        <categories>for automate  program items component</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ServerError</shortDescription>
+        <value>Server Error Occurred: Kindly refresh the page and try again!</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_ShopkitRejected</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ShopkitRejected</shortDescription>
+        <value>Selected Shopped Kit Program has been Rejected.</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_StandardPrice</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_StandardPrice</shortDescription>
+        <value>Standard Price cannot be null and should have only number values. Please check Row:</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_StartDateGreater</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_StartDateGreater</shortDescription>
+        <value>Start Date Should not be Greater than End Date.</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_StartDateValidation</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_StartDateValidation</shortDescription>
+        <value>Incorrect Start Date : Please Use MM/DD/YYYY Date format,</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_SubmitForApproval</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_SubmitForApproval</shortDescription>
+        <value>Submitted for Approval</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_TAUserOrTAAdmin</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_TAUserOrTAAdmin</shortDescription>
+        <value>Logged In user should be TAAdmin or TAUser to access this Page.</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_TerrBudgetCharacter</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_TerrBudgetCharacter</shortDescription>
+        <value>Territory Brand Budget and Discretionary Budget Can not be character.</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_TradeActivationType</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_TradeActivationType</shortDescription>
+        <value>Trade Activation</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_URL</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_URL</shortDescription>
+        <value>https://naz--uat.lightning.force.com</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_URLForImage</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_URLForImage</shortDescription>
+        <value>https://naz--uat--c.cs41.content.force.com</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_UnderscoreinProductName</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_UnderscoreinProductName</shortDescription>
+        <value>Product Name should not have following special characters:forward and back slash,question mark,colon,double quotes.</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_UserPaid</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_UserPaid</shortDescription>
+        <value>Is UserPaid cannot be Empty. Either put YES or NO. Please check Row:&quot;</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_ValidationSuccess</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ValidationSuccess</shortDescription>
+        <value>File has been successfully Validated. Kindly proceed to Save Data.</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_Year</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_Year</shortDescription>
+        <value>Budget Year cannot be Empty. Please check Row:</value>
+    </labels>
+    <labels>
+        <fullName>ABI_OP_YearSelection</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_YearSelection</shortDescription>
+        <value>Year only should be Previous year, current Year or Next Year (YYYY).</value>
+    </labels>
+    <labels>
+        <fullName>ABI_Program_Item_CSV_Headers</fullName>
+        <categories>Header Values for CSV staging object Program Brand Items</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI Program Item CSV Headers</shortDescription>
+        <value>BrandName,ProgramName,ProgramDescription,ProgramStartDate,ProgramEndDate,PlanningStartDate,PlanningEndDate,BusinessLine,SAPItemNumber,TempItemNumber,ProductName,isUserPaid,Size,Language,UnitOfMeasure,Currency2,QuantityPerUOM,StandardPrice,FullPriceToRep,ItemType,ItemClassification,Atlantic,Quebec,Ontario,West,MenuCategory,ItemDescriptionEN,ItemDescriptionFR,ParentProductType,ProductType,IsAllocationOnly,Year</value>
+    </labels>
+    <labels>
+        <fullName>ApprovalURLItemAndShoppedKitItem</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ApprovalURLItemAndShoppedKitItem</shortDescription>
+        <value>https://naz--uat.lightning.force.com/lightning/cmp/c__ShoppedKitApprovalScreen</value>
+    </labels>
+    <labels>
+        <fullName>Approval_status_as_Approved</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Approval status as Approved</shortDescription>
+        <value>Approved</value>
+    </labels>
+    <labels>
+        <fullName>In_Home_IH</fullName>
+        <categories>POC Planning App</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>In Home IH</shortDescription>
+        <value>In Home IH</value>
+    </labels>
+    <labels>
+        <fullName>Items_Successfully_pushed_to_POCP</fullName>
+        <categories>for preview program items component</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ABI_OP_ItemPushedSuccessfuly</shortDescription>
+        <value>Items Successfully pushed to POC Planning</value>
+    </labels>
+    <labels>
+        <fullName>ProgramBrandItemURL</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>ProgramBrandItemURL</shortDescription>
+        <value>https://naz--uat.lightning.force.com/lightning/cmp/c__PreviewBrandProgramItem</value>
+    </labels>
+    <labels>
+        <fullName>Stagging_Record_Archival_Year</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Stagging Record Archival Year</shortDescription>
+        <value>2020</value>
+    </labels>
+    <labels>
+        <fullName>Submitted_for_Approval_Label</fullName>
+        <categories>Submitted for Approval</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Submitted for Approval Label</shortDescription>
+        <value>Submitted for Approval</value>
+    </labels>
+    <labels>
+        <fullName>Super_Bowl_Spend</fullName>
+        <categories>POC Planning App</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Super Bowl Variable</shortDescription>
+        <value>User Paid Program</value>
+    </labels>
+</CustomLabels>

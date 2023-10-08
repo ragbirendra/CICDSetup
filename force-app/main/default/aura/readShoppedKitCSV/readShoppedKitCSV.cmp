@@ -1,0 +1,159 @@
+<aura:component controller="GenericDataStampingApex" implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId" access="global">
+    <aura:attribute name="fileName" type="String" default='No File Selected'/>  
+    <aura:attribute name="listData" type="String[]" />  
+    <aura:attribute name="indexVar" type="string" default= "" />  
+    <aura:attribute name="OptionsPC" type="string[]" />
+    <aura:attribute name="selectedPC" type="String" default="None"/>
+    <aura:attribute name="listDataToDisplay" type="String[]" /> 
+    <aura:attribute name="shopkitRecords" type="NAZ_OP_Shopkit_Data__c[]"/>
+    <aura:attribute name="exportYearList" type="Integer[]" />
+    <!--for lighting spinner-->
+    <aura:attribute name="isLoading" type="Boolean"/>
+    <aura:attribute name="showButtons" type="Boolean"/>
+    <aura:attribute name="validationFlag" type="Boolean" default="true"/>
+    <aura:attribute name="validationflagDis" type="Boolean" default="false"/>
+    <aura:attribute name="fileHeader" type="String"/>
+    <aura:attribute name="excelHeader" type="String"/>
+    <aura:attribute name="pageReference" type="Object"/>
+	<lightning:navigation aura:id="navService"/>
+   
+    <!--for Modal Popup-->
+    <aura:attribute name="msgToPass" type="String[]"   />
+    <aura:attribute name="openModal" type="Boolean" default="false" /> 
+    
+    <aura:if isTrue="{!v.openModal}">
+        	<c:ModalPopup msgToPass="{!v.msgToPass}" openModal="{!v.openModal}" isMsgFromAutomationPage="false"/>
+   	</aura:if>
+    
+    <aura:attribute name="showTable" type="Boolean"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <div style="overflow: auto;">
+        <!--<div class="slds-horizontal-medium slds-size-1-of-1" id="filterCriteriaDiv" > -->
+            <div class="slds-box" Style="padding-bottom:1px;">
+                
+                    <lightning:layout multipleRows="true">
+                        <lightning:layoutItem size="6">
+                            <lightning:input accept=".csv" type="file" class="file" label="Upload Shopped Kit" aura:id="fileId" onchange="{!c.onFileUpload}"/>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            <div class="slds-text-body_small slds-text-color_error" id="fileContainer"> {!v.fileName} </div>
+                        </lightning:layoutItem>
+                       <lightning:layoutItem size="6" >
+                            
+                            <lightning:button variant="brand" label="Export template" title="Export template" onclick="{!c.downloadCsv}"/>
+                            <lightning:button variant="brand" label="Go to:POC Planning Shoppedkit Staging" title="Go to:POC Planning Shoppedkit Staging" onclick="{!c.previewRecords}"/>
+                       </lightning:layoutItem>
+                    </lightning:layout>
+                   <!--</div>
+                </div>-->
+           </div> 
+           
+        <!--</div>-->
+                   
+    </div>
+                  
+    
+    <br/>
+    <aura:if isTrue="{!v.showTable}" >
+        
+        <aura:if isTrue="{!v.showButtons}">
+                <lightning:button variant="Brand" label="Validate Data " disabled="{!v.validationflagDis}" title="validate" onclick="{! c.validate}"/>
+                <lightning:button variant="Brand" label="Save Data" disabled="{!v.validationFlag}" title="submit" onclick="{! c.onSave }"/>
+                <lightning:button variant="Brand" label="Clear Data " title="Clear Data" onclick="{! c.clear}"/>
+                  
+        </aura:if>
+        <br/><br/>
+        <div class="slds-scrollable" >
+       <!-- <div class="slds-scrollable_y" style="height:750px; ">
+            <div class="slds-scrollable_x" style="width:700 px; ">-->
+                <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                    <thead>
+                        
+                        <tr class="slds-text-title_caps">
+                            <!--header checkbox for select all-->
+                            <th scope="col">
+                            <div class="slds-truncate" title="Sr. No">Sr. No</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Shopped Kit Name">Shopped Kit Name</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Program Name">Program Name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </th> 
+                        
+                        <th scope="col">
+                            <div class="slds-truncate" title="Shopkit Start Date">Shopkit Start Date &nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Shopkit End Date">Shopkit End Date &nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                      
+                        <th scope="col">
+                            <div class="slds-truncate" title="Shopkit Price">Shopkit Price &nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Shopkit SAP Number">Shopkit SAP Number &nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Shopkit Temporary Item Numbers">Shopkit Temporary Item Numbers &nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Shopkit Qty">Shopkit Qty &nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="year">Year &nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Business Line">Business Line &nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                       
+                    </tr>
+                </thead>
+                <tbody> 
+                    <aura:iteration items="{!v.listDataToDisplay}" var="item" indexVar = "indexVarNo">
+                        
+                        <tr>
+                            <td >
+                                {!indexVarNo + 1}
+                            </td>
+                            <td>
+                                    <lightning:input type="text"  label="" value="{!item.ShoppedKitName}" maxlength="20" minlenght="3"/>
+                            </td>
+                            
+                            <td> <lightning:input type="text"  label="" value="{!item.ProgramName}"  /> 
+                               
+                            </td> 
+                            <td><lightning:input type="text"  label="" value="{!item.ShopkitStartDate}"  /> 
+                   
+                            </td>   
+                                              
+                            <td><lightning:input type="text"  label="" value="{!item.ShopkitEndDate}"  maxlength="20" minlenght="3"/> 
+                         
+                            </td>    
+   
+                            <td><lightning:input  type="text"  label="" value="{!item.ShopkitPrice}" />
+                     
+                            </td>    
+                            <td><lightning:input type="text" label="" value="{!item.ShopkitSAPNumber}" /> 
+                              
+                            </td>
+                            <td>                                    
+                                    <lightning:input type="text"  label="" value="{!item.ShopkitTemporaryItemNumbers}"  /> 
+     
+                            </td>  
+                            <td><lightning:input type="text"  label="" value="{!item.ShopkitQty}"  />  </td> 
+                            <td><lightning:input type="text"  label="" value="{!item.Year}"  maxlength="20" minlenght="4"/>  </td> 
+                            <td><lightning:input type="text"  label="" value="{!item.BusinessLine}"  /> </td> 
+                        </tr>
+                    </aura:iteration>
+                </tbody>
+            </table>
+        <!--</div>
+    </div>-->
+        </div>
+    </aura:if> 
+    <br/>
+   
+    <aura:if isTrue="{!v.isLoading}">
+        <lightning:spinner variant="brand" size="medium" aura:id="isLoading"/>
+    </aura:if>
+</aura:component>

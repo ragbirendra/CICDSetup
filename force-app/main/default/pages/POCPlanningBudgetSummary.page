@@ -1,0 +1,924 @@
+<apex:page controller="POCPlanningApp" showHeader="false" sidebar="false">
+    <style type="text/css">
+
+        .POCBudgetSummaryWrapper{           
+            display: none;
+            position: fixed;
+            top: 66px; /*height of header*/
+            left: 0;
+            width: 100%;
+            border-bottom: 2px solid #D9D9D9; 
+            z-index: 1;
+        }
+
+        .POCBudgetSummary{            
+            background-color: #fff;         
+            border-bottom: 1px solid #BABABA;
+            padding: 0.75%;
+            text-align: center;
+        }
+
+        .POCSpendWrapper {
+            background-color: rgb(236, 242, 246);
+            border-radius: 5px;
+            display: inline-block;
+            width: 66%;
+            padding: 0.25%;
+            margin-right: 1%;
+            padding-top: 0.75%;
+        }
+
+        .POCSpendWrapper div.selected {
+            position: relative;
+        }
+
+        .POCMetricWrapper {
+            border-radius: 5px;
+            display: inline-block;
+            width: 32%;
+            padding: 0.25%;
+            padding-top: 0.75%;
+            border: 1px solid rgb(200, 204, 206);
+        }
+
+        .POCMetricWrapper > div, POCSpendWrapper > div {
+            display: table;
+            text-transform: uppercase;
+        }
+
+        .POCBudgetSummaryTopline {
+            text-align: center;
+        }
+
+        .POCSpendWrapper > div > div, .POCMetricWrapper > div > div {
+            border-right: 1px solid rgb(200, 204, 206);
+            text-align: center;
+            vertical-align: center;
+            display: table-cell;
+            width: 10%;
+        }
+
+        @media (min-width: 1200px) {
+            .POCSpendWrapper > div > div, .POCMetricWrapper > div > div {
+                font-size: 120%;
+            }
+        }
+
+        .POCSpendWrapper > div > div {
+            cursor: pointer;
+        }
+
+        .POCSpendWrapper > div > div:last-child, .POCMetricWrapper > div > div:last-child {
+            border-right: 0;
+        }
+
+        .POCSpendWrapper > div > div > p:first-child, .POCMetricWrapper > div > div > p:first-child {
+            font-weight: bold;
+        }
+
+        /*.POCBudgetSummaryTopline{
+            width: 100%;
+            display: table;
+            margin-left: auto;
+            margin-right: auto;
+        }*/
+
+        /*.POCBudgetSummaryToplineTitle .POCCell, .POCBudgetSummaryToplineTotal .POCCell{
+            width: 14.2%;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .POCTotalBudget{
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        .POCSpendCategory{
+            background-color: #bbbdbf;
+            color: #ffffff;
+        }*/
+/*
+        .POCBudgetSummaryToplineTotal .POCCell{
+            background-color: #ffffff;
+            padding: 5px;
+            position: relative;
+        }*/
+
+        .POCBudgetSummaryTA{
+            display: none;
+            margin-left: auto;
+            margin-right: auto;     
+            margin-top: .9%;
+            overflow-x: auto;
+            overflow-y: hidden;          
+        }
+
+        .POCBudgetCell{
+            display: inline-block;
+            vertical-align: top;
+            height: 100%;
+        }
+
+        .POCBudgetSummaryTA .POCBudgetBrand {       
+            border-right: 1px solid rgb(200, 204, 206);
+            padding: 5px;
+        }
+
+        .POCBudgetSummaryTA .POCBudgetBrand:last-child {
+            border-right: 0;
+        }
+
+        .POCBudgetBrand div{
+            margin: auto;
+            text-align: center;
+            vertical-align: middle;         
+        }
+
+        @media (min-width: 1200px) {
+            .POCBudgetBrand div {
+                font-size: 120%;
+                font-weight: bold;
+            }
+        }
+
+        .POCBudgetBrand img{
+            max-width: 105px;
+        }
+
+        .POCBudgetSummaryDisc{
+            display: none;
+            margin-top: 10px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .POCBudgetSummaryDiscCell{
+            margin: auto;
+            border-right: 1px solid  rgb(200, 204, 206);
+            padding: 5px;
+            width: 200px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 120%;
+        }
+
+        .POCBudgetSummaryDiscCell > div:first-child {
+            font-weight: bold;
+            padding: 5px;
+        }
+
+        .POCBudgetSummaryDiscCell > div:last-child { 
+            padding-bottom: 5px;
+        }
+
+        .POCRow > div:last-child {
+            border-right: 0;
+        }
+
+        .triangle-downWrapper{
+            position: absolute;
+            left: 50%;
+            margin-top: .9%;
+            margin-left: -15px;
+        }       
+
+        .triangle-down{ 
+            display: none;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 10px solid rgb(236, 242, 246);
+            margin: auto;
+        }
+        .isUserPaid {
+            padding: 0.25%;
+            padding-top: 0.75%;
+            border: 1px solid rgb(200, 204, 206);
+            color: Black;
+            font-weight: bold;
+        	background-color: #add8e6;   
+         }
+    </style>
+
+    <script type="text/javascript">
+        function POCBudgetSummaryVM(parent) {
+            console.log('@@@ in a POCBudgetSummaryVM @@@',parent);
+            
+            var initialLoad = true;
+            var self = this;
+            var budgetYear;
+            self.parent = parent;
+            
+            self.BudgetSummary;
+            self.IsSpecialty = ko.observable();
+            //self.BrandBudgetList;
+            self.BrandBudgetList = ko.observableArray();
+            self.BrandCount = ko.observable(0);
+            self.MaxBrandPerc = ko.computed(function(){
+                var num = 92/self.BrandCount();
+                return num+"%";
+            });
+
+            self.displayBudgetWarning = ko.observable(false);
+            self.displayBudgetWarningModal = ko.observable(true);
+            self.displayTADetails = ko.observable(false);
+            self.displayDriverDetails = ko.observable(false);
+            self.displayDiscDetails = ko.observable(false);
+            self.displayBudgetSummary = ko.observable(true);
+            self.headerBarHeight = ko.observable();
+            var isBackOffice=false;                             //W-013969 AP Changes
+
+            self.toggleTADetails = function() {
+                if(self.displayTADetails()){
+                    self.hideTADetails();
+                } else {
+                    self.showTADetails();
+                }
+                self.measureHeaderBars();
+            }
+
+            self.showTADetails = function() {
+                self.hideDriverDetails();
+                self.hideDiscDetails();
+                self.displayTADetails(true);
+            }
+
+            self.hideTADetails = function() {
+                self.displayTADetails(false);
+            }
+
+            self.toggleDriverDetails = function() {
+                if(self.displayDriverDetails()){
+                    self.hideDriverDetails();
+                } else {
+                    self.showDriverDetails();
+                }
+                self.measureHeaderBars();
+            }
+
+            self.showDriverDetails = function() {
+                self.hideTADetails();
+                self.hideDiscDetails();
+                self.displayDriverDetails(true);
+            }
+
+            self.hideDriverDetails = function() {
+                self.displayDriverDetails(false);
+            }
+
+            self.toggleDiscDetails = function() {
+                if(self.displayDiscDetails()){
+                    self.hideDiscDetails();
+                } else {
+                    self.showDiscDetails();
+                }
+                self.measureHeaderBars();
+            }
+
+            self.showDiscDetails = function() {
+                self.hideTADetails();
+                self.hideDriverDetails();
+                self.displayDiscDetails(true);
+            }
+
+            self.hideDiscDetails = function () {
+                self.displayDiscDetails(false);
+            }
+
+            self.toggleBudgetBar = function () {
+                if(self.displayBudgetSummary()){
+                    self.hideBudgetBar();
+                } else {
+                    self.showBudgetBar();
+                }
+                self.measureHeaderBars();
+            }
+
+            self.showBudgetBar = function() {
+                self.displayBudgetSummary(true);
+            }
+
+            self.hideBudgetBar = function() {
+                self.displayBudgetSummary(false);
+                self.displayTADetails(false);
+                self.displayDriverDetails(false);
+                self.displayDiscDetails(false);
+            }
+
+            self.toggleBudgetWarning = function(show){
+                self.displayBudgetWarning(show);
+                if (show && self.displayBudgetWarningModal()) {
+                    $('#modalBudgetWarning').modal();
+                    self.displayBudgetWarningModal(false);
+                }
+                self.measureHeaderBars();
+            }
+
+            self.measureHeaderBars = function(){
+                var POCHeaderHeight = ($("#POCHeaderWrapperId").height()|| 0) + 20;
+
+                $("#POCBudgetSummary").css("top", POCHeaderHeight + "px");
+
+                self.headerBarHeight(POCHeaderHeight + ($("#POCBudgetSummary").height() || 0));
+
+                if(parent.UrlParameters.Page == "Dashboard"){
+                    $("#POCPlanningDashboardSFID").css("top", self.headerBarHeight() + "px");
+                    $("#POCPlanningDashboardId").css("top", self.headerBarHeight() + "px");
+                } else {    
+                    $("#POCPlanningPOCNavigationWrapper").css("top", self.headerBarHeight() + "px");                
+                }
+                
+                return self.headerBarHeight();
+            };
+
+            self.loadData = function(TerritoryId, Year){
+              console.log('load TerritoryId',TerritoryId); 
+                console.log('Year::::::',Year); 
+                
+                
+                parent.initialYearSet = true;
+                //console.log('---year---',parent.UrlParameters.Year);
+                POCPlanningApp.Budget(TerritoryId,parent.UrlParameters.Year,parent.UrlParameters.Plan, function(result, event){
+                    self.IsSpecialty(result.IsSpecialty);
+                    console.log('===Budget result===OOH',result);
+                    
+                    self.loadBudgetSummary(
+                        result.TerritoryBudget.Id, 
+                        result.TerritoryBudget.Trade_Activation_Budget__c, 
+                        parent.cleanValue(result.TerritoryBudget.Drivers_Budget__c), 
+                        parent.cleanValue(result.TerritoryBudget.Discretionary_Budget__c), 
+                        parent.cleanValue(result.TerritoryBudget.Assigned_KI_Volume__c), 
+                        parent.cleanValue(result.TerritoryBudget.Driver_Spend__c), 
+                        parent.cleanValue(result.TerritoryBudget.Discretionary_Variable_Spend__c), 
+                        parent.cleanValue(result.TerritoryBudget.Discretionary_Pre_Planning_Spend__c), 
+                        parent.cleanValue(result.TerritoryBudget.User_Paid_Overage__c),                  //AP Changes User Paid W-014033
+                        parent.cleanValue(result.TerritoryBudget.Target_Volume__c),
+                        parent.cleanValue(result.TerritoryBudget.Never_Approved__c),
+                        result.isBackOffice                                                   //AP Changes W-013969
+                    );
+                    self.BrandBudgetList.removeAll();   
+                    console.log('===Brand Budget===',self.BrandBudgetList().length);
+                    for(var i=0; i< result.TerritoryBrandBudget.length; i++){ 
+                        
+                        console.log("result.TerritoryBrandBudget[i].Brand__r.Name:::", result.TerritoryBrandBudget[i].Brand__r.Name);     
+                        var brandName = result.TerritoryBrandBudget[i].Brand__r.Name;
+                        if(brandName != 'Alexander Keith\'s' && brandName != 'Goose Island' && brandName != 'Shock Top' && brandName != 'Modelo' && brandName != 'Mill St both' && brandName != 'Mikes Bev' && brandName != 'Palm Bay' && brandName != 'Okanagan' && brandName != 'Budwiser Prohibition' ){
+                            //console.log('----result.TerritoryBrandBudget[i].User_Paid__c--',result.TerritoryBrandBudget[i].User_Paid__c);
+                        self.BrandBudgetList.push(new BrandBudget(
+                            self,
+                            result.TerritoryBrandBudget[i].Id,                              //Id
+                            result.TerritoryBrandBudget[i].Brand__r.Name,                   //Name
+                            result.TerritoryBrandBudget[i].Brand__c,                        //BrandId
+                            result.TerritoryBrandBudget[i].Brand__r.Logo_Link__c,           //BrandLogo
+                            result.TerritoryBrandBudget[i].Brand_Budget__c,                 //Budget
+                            parent.cleanValue(result.TerritoryBrandBudget[i].Driver_Spend__c),                  //Driver
+                            parent.cleanValue(result.TerritoryBrandBudget[i].Discretionary_Spend__c),           //Discretionary             
+                            parent.cleanValue(result.TerritoryBrandBudget[i].Driver_Overage__c),
+                            parent.cleanValue(result.TerritoryBrandBudget[i].Discretionary_Overage__c),
+                            result.TerritoryBrandBudget[i].User_Paid__c,                       //AP Changes User Paid W-014033
+                            result.isBackOffice                 //08-08-2019 //W013969
+                        ));
+                            
+                        
+                        }
+                        
+                        console.log(' #### in brand budget ####')
+                        self.BudgetSummary.TradeActivationDriver(self.BudgetSummary.TradeActivationDriver() + parent.cleanValue(result.TerritoryBrandBudget[i].Driver_Spend__c));
+                        console.log('---self.BudgetSummary.TradeActivationDriver-----',self.BudgetSummary.TradeActivationDriver());
+                        self.BudgetSummary.TradeActivationDiscretionary(self.BudgetSummary.TradeActivationDiscretionary() + parent.cleanValue(result.TerritoryBrandBudget[i].Discretionary_Spend__c));
+                        console.log('---self.BudgetSummary.TradeActivationDiscretionary-----',self.BudgetSummary.TradeActivationDiscretionary());
+                        if(result.TerritoryBrandBudget[i].User_Paid__c){  //W-014033 User Paid
+                            self.BudgetSummary.UserPaidSpendTopUp(self.BudgetSummary.UserPaidSpendTopUp()+parent.cleanValue(result.TerritoryBrandBudget[i].Discretionary_Overage__c));
+                        	
+                        }
+                        else{
+                            // console.log('=====after entering quantity==');
+                           self.BudgetSummary.DiscretionaryTopUp( self.BudgetSummary.DiscretionaryTopUp() + parent.cleanValue(result.TerritoryBrandBudget[i].Discretionary_Overage__c)); 
+                        }
+                         
+                        self.BudgetSummary.DriversTopUp( self.BudgetSummary.DriversTopUp() + parent.cleanValue(result.TerritoryBrandBudget[i].Driver_Overage__c) );
+                    }
+                    console.log('===Brand Budget===After',self.BrandBudgetList());
+                    self.BrandCount(self.BrandBudgetList().length);
+                    //ko.applyBindings(self.BudgetSummary, document.getElementById("POCBudgetSummary"));
+                     console.log('------ko.dataFor(document.getElementById("POCBudgetSummary")) in a Budget Summary---------',ko.dataFor(document.getElementById("POCBudgetSummary")));
+                    parent.ApplyBudgetSummaryBinding();
+
+                    initialLoad = false;
+                    parent.initialYearSet = false;
+                },{escape: false});
+            }
+
+            self.loadBudgetSummary = function(Id,TradeActivation, Drivers, Discretionary, AssignedKIVolume, 
+                                              DriversSpend, DiscretionaryVariableSpend, DiscretionaryPrePlanningSpend,UserPaidOverage, TargetVolume, NeverApproved, isBackOffice){  //w-013969   W-014033
+                console.log('---In a load budget summary---',TradeActivation);
+                if(TradeActivation== "" || TradeActivation == null){
+                    TradeActivation = 0;
+                }
+                if(self.BudgetSummary == null){                    
+                    console.log('---In a load budget summary--- in null'+TradeActivation);                  
+                     self.BudgetSummary = new BudgetSummary(self, Id, TradeActivation, Drivers, Discretionary, AssignedKIVolume, 
+                         DriversSpend, DiscretionaryVariableSpend, DiscretionaryPrePlanningSpend,UserPaidOverage, TargetVolume, NeverApproved, isBackOffice);      //w-013969  W-014033 
+                } else  {                    
+                     console.log('---In a load budget summary--- in not null');
+                    self.BudgetSummary.Id(Id);
+                    self.BudgetSummary.TradeActivation(TradeActivation);
+                    self.BudgetSummary.Drivers(Drivers);
+                    self.BudgetSummary.Discretionary(Discretionary);
+                    self.BudgetSummary.AssignedKIVolume(AssignedKIVolume);
+                    self.BudgetSummary.DriversSpend(DriversSpend);
+                    self.BudgetSummary.DiscretionaryVariableSpend(DriversSpend);
+                    self.BudgetSummary.DiscretionaryPrePlanningSpend(DiscretionaryPrePlanningSpend);
+                    // console.log('=====User paid Overage===',UserPaidOverage);
+                    self.BudgetSummary.UserPaidSpend(UserPaidOverage);  // User Paid AP Changes W-014033
+                    self.BudgetSummary.variableSpend(DiscretionaryVariableSpend);
+                    self.BudgetSummary.TargetVolume(TargetVolume);  
+                    self.BudgetSummary.NeverApproved(NeverApproved);
+                    self.BudgetSummary.TradeActivationRU(0);
+                    self.BudgetSummary.TradeActivationDriver(0);
+                    self.BudgetSummary.TradeActivationDiscretionary(0);
+                    self.BudgetSummary.DriversTopUp(0);
+                    self.BudgetSummary.DiscretionaryTopUp(0);  
+                    self.BudgetSummary.isBackOffice(isBackOffice);    ////w-013969
+                }       
+            }
+
+            self.measureHeaderBars();
+            self.loadData(parent.UrlParameters.TerritoryId, parent.UrlParameters.Year);
+
+            self.volumeStatus = function(assigned,target){
+                if(assigned > target){
+                    return 'underBudget';
+                } else {
+                    return 'onBudget';
+                }
+            }
+
+            self.loadDashboard = function(){
+                //  console.log('----is back Office----',self.BudgetSummary.isBackOffice());
+                if(parent.UrlParameters.Page != 'Dashboard'){
+                    if(self.BudgetSummary.isBackOffice()){
+                        parent.setQueryString("Dashboard", parent.UrlParameters.Year,self.BudgetSummary.Id());// self.BudgetSummary.Id());//parent.UrlParameters.TerritoryId);
+                    }
+                    else
+                        {
+                     parent.setQueryString("Dashboard", parent.UrlParameters.Year, parent.UrlParameters.TerritoryId);
+                            }
+                    parent.loadAppPage();
+                    self.measureHeaderBars();
+                }
+            }
+
+            //Apply TA overage to appropriate budget
+            self.handleBrandOverage = function (brandDriverSpend, brandDriverOverage, diff, brandDiscretionaryOverage, isUserPaid) {   //W-014033
+                
+                //diff is difference in overage
+                var driverAmount = 0;           //Driver Overage Amount Change
+                var discretionaryAmount = 0;    //Discretionary Overage Amount Change
+
+                var driverOveragePlusDiff = window.cleanValue(brandDriverOverage + diff);
+                //	console.log('Brand Driver spend===='+brandDriverSpend+'===Driver Overage=='+driverOveragePlusDiff);
+                //  console.log('======isUserPaidn ', isUserPaid);
+                //If Spend is greater than or equal to the driver overage + diff 
+                if ( window.cleanValue(brandDriverSpend) >= driverOveragePlusDiff) {
+                    driverAmount = diff;
+                    if (window.cleanValue(brandDriverSpend) != driverOveragePlusDiff && window.cleanValue(brandDiscretionaryOverage) > 0) {
+                        
+                        if (window.cleanValue(brandDriverSpend) >= window.cleanValue(driverOveragePlusDiff + brandDiscretionaryOverage)) {
+                            discretionaryAmount = brandDiscretionaryOverage * -1;                            
+                            driverAmount +=  brandDiscretionaryOverage;                            
+                        } else {
+                            discretionaryAmount = brandDriverSpend - brandDriverOverage - diff * -1;                            
+                            driverAmount += brandDriverSpend - brandDriverOverage - diff;                            
+                        }
+                    }
+                    //console.log('Top Driver Value--',self.BudgetSummary.DriversTopUp() + (discretionaryAmount * -1) + diff);
+                    self.BudgetSummary.DriversTopUp( self.BudgetSummary.DriversTopUp() + (discretionaryAmount * -1) + diff );
+                    //console.log('==after entering quantity===handleBrandOverage&&'+self.BudgetSummary.DiscretionaryTopUp()+'%%%%%%%%'+discretionaryAmount);
+                    if(!isUserPaid){    //W-014033
+                    self.BudgetSummary.DiscretionaryTopUp( self.BudgetSummary.DiscretionaryTopUp() + discretionaryAmount );
+                     }
+                    else   //W-014033
+                    {
+                    self.BudgetSummary.UserPaidSpendTopUp( self.BudgetSummary.UserPaidSpendTopUp() + discretionaryAmount );    
+                    }
+
+                } else {
+                    driverAmount = brandDriverSpend - brandDriverOverage;                    
+                    driverAmount = parseFloat(driverAmount.toFixed(2));                    
+                    discretionaryAmount = diff - driverAmount;                    
+                    discretionaryAmount = parseFloat(discretionaryAmount.toFixed(2));                    
+                    self.BudgetSummary.DriversTopUp( self.BudgetSummary.DriversTopUp() + driverAmount );
+                    //				    console.log('==after entering quantity===handleBrandOverage&& Else'+self.BudgetSummary.DiscretionaryTopUp()+' ^^^^^'+discretionaryAmount);
+                    if(isUserPaid){        //W-014033                  
+                    self.BudgetSummary.UserPaidSpendTopUp( self.BudgetSummary.UserPaidSpendTopUp() + discretionaryAmount );   //  DiscretionaryTopUp
+                    }
+                    else{
+                   self.BudgetSummary.DiscretionaryTopUp( self.BudgetSummary.DiscretionaryTopUp() + discretionaryAmount );   //  DiscretionaryTopUp
+   
+                    }
+                }
+                return {Driver: driverAmount, Discretionary: discretionaryAmount};
+            }
+
+        }
+
+        function BudgetSummary(parent, Id, TradeActivation, Drivers, Discretionary, AssignedKIVolume, 
+                               DriversSpend, DiscretionaryVariableSpend, DiscretionaryPrePlanningSpend,UserPaidSpend, TargetVolume, NeverApproved, isBackOffice){           //W-013969 W-014033
+             console.log('in a budget summary#####'+TradeActivation+'####'+AssignedKIVolume+'@@@@'+DriversSpend+'#######'+DiscretionaryVariableSpend);
+              console.log('#### DriversSpend ####',DriversSpend);
+             console.log('#### DiscretionaryVariableSpend ####',DiscretionaryVariableSpend);
+            var self = this;
+            self.Id = ko.observable(Id);
+            self.isBackOffice=ko.observable(isBackOffice);														//W-013969 AP Changes
+            self.TradeActivation = ko.observable(parseFloat(TradeActivation));
+            console.log('**** self.TradeActivation ****',self.TradeActivation());
+            self.Drivers = ko.observable(parseFloat(Drivers));
+            self.Discretionary = ko.observable(parseFloat(Discretionary));
+            self.TotalBudget = ko.computed(function(){
+                // console.log('----'+self.TradeActivation() + '----ina a budget--'+self.Discretionary());
+                //return self.TradeActivation() + self.Drivers() + self.Discretionary();
+                return self.TradeActivation()  + self.Discretionary();   //Updated by AP
+            });
+            console.log('-- TotalBudget ###',self.TotalBudget());
+            self.AssignedKIVolume = ko.observable(parseInt(AssignedKIVolume));
+
+            self.TradeActivationRU = ko.observable(0);
+            self.TradeActivationDriver = ko.observable(0);
+            self.TradeActivationDiscretionary = ko.observable(0);
+            self.TradeActivationRUPreReallocation = ko.computed(function(){
+                return self.TradeActivationDriver() + self.TradeActivationDiscretionary();
+            }); 
+
+            self.DriversTopUp = ko.observable(0);
+            self.DriversSpend= ko.observable(DriversSpend);         
+            self.DriversRU = ko.computed(function(){
+                return self.DriversSpend() + self.DriversTopUp();
+            });
+            
+            self.DiscretionaryTopUp = ko.observable(0);
+            // console.log('---DriversSpend---',DriversSpend);
+            self.DiscretionaryVariableSpend = ko.observable(DiscretionaryVariableSpend);
+            //self.variableSpend= ko.observable(DiscretionaryVariableSpend);
+            self.DiscretionaryPrePlanningSpend = ko.observable(DiscretionaryPrePlanningSpend);
+            self.UserPaidSpend= ko.observable(UserPaidSpend);           //AP Changes User Paid   W-014033
+            self.UserPaidSpendTopUp= ko.observable(0);					// W-014033
+            self.DescretionaryRU = ko.computed(function(){   //W-014033
+                //   console.log('===self.DiscretionaryTopUp()---'+self.DiscretionaryTopUp()+'=====self.DiscretionaryVariableSpend()--'+self.DiscretionaryVariableSpend()+'===self.DiscretionaryPrePlanningSpend()==='+self.DiscretionaryPrePlanningSpend()+'----self.DriversSpend()---'+self.DriversSpend());
+                return parseFloat((parseFloat(self.DiscretionaryTopUp()) + parseFloat(self.UserPaidSpendTopUp()) + parseFloat(self.DiscretionaryVariableSpend()) + parseFloat(self.DiscretionaryPrePlanningSpend())).toFixed(2));
+            });
+            
+            
+
+            self.TradeActivationOverage = ko.computed(function() {
+                var getNewAmount = parseFloat(self.DriversTopUp()) + parseFloat(self.DiscretionaryTopUp());
+                getNewAmount = parseFloat(getNewAmount.toFixed(2));
+                parent.toggleBudgetWarning(getNewAmount != 0 ? true : false);
+                return getNewAmount;
+            })
+
+            self.TradeActivationDriver.subscribe(function(){
+                self.UpdateTradeActivationRU();
+            });
+            self.TradeActivationDiscretionary.subscribe(function(){
+                self.UpdateTradeActivationRU();
+            });
+            self.DriversTopUp.subscribe(function(){
+                // console.log('in driver top up===',self.isBackOffice());
+                // if(self.isBackOffice()){
+                self.UpdateTradeActivationRU();
+                //}
+            });
+            self.DiscretionaryTopUp.subscribe(function(){
+                self.UpdateTradeActivationRU(); 
+            });
+            self.UserPaidSpendTopUp.subscribe(function(){     //W-014033 User Paid
+                self.UpdateTradeActivationRU(); 
+            });
+            
+            self.UpdateTradeActivationRU = function(){
+                self.TradeActivationRU(window.cleanValue(self.TradeActivationDriver() + self.TradeActivationDiscretionary() - self.DriversTopUp() - self.DiscretionaryTopUp() - self.UserPaidSpendTopUp()));   //W-014033
+          
+            }
+
+            self.TargetVolume = ko.observable(TargetVolume);
+            self.TotalBudgetRU = ko.computed(function(){
+                //  console.log('----self.TradeActivationRU() ===',self.TradeActivationRU());
+                console.log('----self.DescretionaryRU() ===',self.DescretionaryRU()+ '@@@@@'+self.TradeActivationRU());
+                // return parseFloat((parseFloat(self.TradeActivationRU()) + parseFloat(self.DriversRU()) + parseFloat(self.DescretionaryRU())).toFixed(2));
+                return parseFloat((parseFloat(self.TradeActivationRU())+  parseFloat(self.DescretionaryRU())).toFixed(2)) ; //updated by AP
+            });
+            
+            self.AvgBudget_HL =ko.computed(function(){
+                return Math.ceil(parseFloat(self.TotalBudget())/parseFloat(self.AssignedKIVolume()));
+            });
+
+            self.AvgSpend_HL = ko.computed(function(){
+                return parseFloat(self.TotalBudgetRU())/parseFloat(self.TargetVolume());
+            });
+
+            self.NeverApproved = ko.observable(NeverApproved);
+          
+        }
+    
+    function BrandBudget(parent, Id, Name, BrandId, BrandLogo, Budget, Driver, Discretionary, DriverOverage, DiscretionaryOverage,isUserPaid,isBackOffice) {   //W-014033
+            var self = this;
+            self.parent = parent;
+            self.isBackOffice= ko.observable(isBackOffice),
+            console.log('===is back office in brand budget===',self.isBackOffice());
+            self.isUserPaid= ko.observable(isUserPaid),              //User Paid Check   W-014033
+            console.log('===is user paid in brand budget===',self.isUserPaid());
+            self.Id = ko.observable(Id);
+            self.Name = ko.observable(Name);
+           console.log('===is Name in brand budget===',self.Name());
+            self.BrandId = ko.observable(BrandId);
+            self.BrandLogo = ko.observable(BrandLogo);
+            self.Budget = ko.observable(Budget);
+            self.Driver = ko.observable(Driver);
+            console.log('=== Discretionary====',Discretionary);
+            self.Discretionary = ko.observable(Discretionary);
+            self.DriverOverage = ko.observable(DriverOverage);
+            self.DiscretionaryOverage = ko.observable(DiscretionaryOverage);
+            self.DriverOld = ko.observable(0);
+            self.DiscretionaryOld = ko.observable(0);
+            self.lock = ko.observable(false);
+            self.Spend = ko.computed(function(){
+                  return window.cleanValue(self.Driver() + self.Discretionary());
+            });
+            self.SpendOld = ko.observable(0);
+
+            self.Overage = ko.computed(function(){
+                return window.cleanValue(self.DriverOverage() + self.DiscretionaryOverage());
+            });
+
+            self.Spend.subscribe(function(SpendOld) {
+                self.SpendOld(SpendOld);
+            }, null, 'beforeChange');
+
+            self.Spend.subscribe(function(newValue) {
+                //Check to see if Budget available for new spend
+                var newOverage = window.cleanValue(self.Spend() - self.Budget());
+                console.log('^^^^^^^newOverage'+newOverage+'^^^^^^^'+self.Spend()+'^^^^^^^^^'+self.Budget());
+                //If so set overage to 0
+                newOverage < 0 ? newOverage = 0 : null;
+
+                //Look at previous overage amount
+                var oldOverage = window.cleanValue(self.DriverOverage() + self.DiscretionaryOverage());
+                console.log('^^^^^^^oldOverage'+oldOverage+'^^^DriverOverage^^^^'+self.DriverOverage()+'^^^^DiscretionaryOverage^^^^^'+self.DiscretionaryOverage());
+				console.log('===self.Driver()@@@@'+self.Driver()+'####self.DriverOld()###'+self.DriverOld());
+                console.log('===self.Driver()@@@@'+self.Driver()+'####self.DriverOld()###'+self.DriverOld());
+                
+                console.log('=== parent.BudgetSummary.TradeActivationDiscretionary() ==='+parent.BudgetSummary.TradeActivationDiscretionary());
+                console.log('=== self.Discretionary() ==='+self.Discretionary());
+                console.log('=== self.DiscretionaryOld() ==='+self.DiscretionaryOld());
+                
+                parent.BudgetSummary.TradeActivationDriver(window.cleanValue(parent.BudgetSummary.TradeActivationDriver() + self.Driver() - self.DriverOld() ));   //Change   + self.Driver() - self.DriverOld()           
+                parent.BudgetSummary.TradeActivationDiscretionary(window.cleanValue(parent.BudgetSummary.TradeActivationDiscretionary()+ self.Discretionary() - self.DiscretionaryOld() ));     //+ self.Discretionary() - self.DiscretionaryOld()  
+                console.log('===parent.BudgetSummary.TradeActivationDiscretionary===='+parent.BudgetSummary.TradeActivationDiscretionary);
+				console.log('=======User Paid In Spend Subscribe ---->',self.isUserPaid());
+                //If overage amount changed
+                if (oldOverage != newOverage) {
+                    console.log('--self.Driver()^^'+self.Driver() +'^^^^^'+ self.DriverOverage() + '^^^^^^^' +self.DiscretionaryOverage() +'^^^^^^^^' +window.cleanValue(newOverage - oldOverage));
+                    var spendObject = parent.handleBrandOverage(self.Driver(), self.DriverOverage(), window.cleanValue(newOverage - oldOverage)/*diff*/, self.DiscretionaryOverage(),self.isUserPaid());   //W-014033
+                    self.DriverOverage( self.DriverOverage() + spendObject.Driver );
+                    self.DiscretionaryOverage ( self.DiscretionaryOverage() + spendObject.Discretionary );
+                }
+            })
+
+            self.Driver.subscribe(function(DriverOld) {
+                self.DriverOld(DriverOld);
+                self.DiscretionaryOld(self.Discretionary());
+            }, null, 'beforeChange');
+
+            self.Discretionary.subscribe(function(DiscretionaryOld) {
+                console.log('%%%%%%DiscretionaryOld',DiscretionaryOld);
+                self.DiscretionaryOld(DiscretionaryOld);
+                console.log('%%%%%%self.Driver()',self.Driver());
+                self.DriverOld(self.Driver());
+            }, null, 'beforeChange');
+
+            var initialLoad = true;
+            self.filterBrand = function(Name,Id){
+                if(!initialLoad){
+                    if(parent.parent.UrlParameters.Page == "Dashboard"){                    
+                        var Option = new SelectOption(Name,Id);
+                        parent.parent.POCPlanningDashboard.selectedTerritoryBrand(Option);
+                    }
+                } else {
+                    initialLoad = false;
+                }
+            }
+        }
+    </script>
+    
+    <div class="modal fade" id="modalBudgetWarning" tabindex="-1" role="dialog" aria-labelledby="modalBudgetWarning">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">{!$Label.Trade_Activation_Budget_Exceeded_Title}</h4>
+            </div>
+            <div class="modal-body">
+                {!$Label.Trade_Activation_Budget_Exceeded_Message}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close">Ok</button>
+            </div>
+            </div>
+        </div>
+    </div>
+    <div class="POCBudgetSummaryWrapper" id="POCBudgetSummary">
+        <div data-bind="style: {display: displayBudgetSummary() ? 'block' : 'none'}" class="POCBudgetSummary">
+            <div data-bind="style: {display: displayBudgetWarning() ? 'block': 'none'}" class="alert alert-danger" role="alert">
+                {!$Label.Trade_Activation_Budget_Exceeded_Message}
+            </div>
+
+            <div class="POCBudgetSummaryTopline">
+                <div class="POCSpendWrapper"><div>
+                    <div data-bind="click: loadDashboard">
+                        <p>{!$Label.Total_Budget}</p>
+                        <p>
+                            <span data-bind="css: parent.budgetStatus(BudgetSummary.TotalBudget(), BudgetSummary.TotalBudgetRU(), BudgetSummary.DriversRU())">
+                                $<span data-bind="text: setupNumbers(BudgetSummary.TotalBudgetRU() )"/>
+                            </span>
+                            | 
+                            <span>
+                                $<span data-bind="text: setupNumbers(BudgetSummary.TotalBudget())"/>
+                            </span>
+                        </p>
+                    </div>
+                    <div data-bind="click: toggleTADetails, css: displayTADetails() ? 'selected' : ''">
+                        <p>{!$Label.Trade_Activation} <i data-bind="css: displayTADetails() ? 'fa-chevron-up' : 'fa-chevron-down'" class="fa"/></p>
+                        <div>
+                            <span data-bind="css: parent.budgetStatus(BudgetSummary.TradeActivation(), BudgetSummary.TradeActivationRU())">
+                                $<span data-bind="text: setupNumbers(BudgetSummary.TradeActivationRU() )"/>
+                            </span>
+                            |   
+                            <span>
+                                $<span data-bind="text: setupNumbers(BudgetSummary.TradeActivation())"/>
+                            </span> 
+                            <span data-bind="style: {display: BudgetSummary.TradeActivationOverage() != 0 ? 'inline' : 'none'}">
+                                <span class="overage">
+                                    <i class="fa fa-exclamation-circle" aria-hidden="true" style="font-size: 16px"></i>
+                                </span>
+                            </span>             
+                            <div class="triangle-downWrapper">
+                                <div data-bind="style: {display: displayTADetails() ? 'block' : 'none'}" class="triangle-down" ></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div data-bind=" css: displayDriverDetails() ? 'selected' : ''">
+                          
+                     <p>{!$Label.Driver_POCM_Forecast} </p><!--<i data-bind="css: displayDriverDetails() ? 'fa-chevron-up' : 'fa-chevron-down'" class="fa"/> -->
+                        <div>
+                            <span data-bind="css: parent.budgetStatus(BudgetSummary.Drivers(), BudgetSummary.DriversRU())">
+                                $<span data-bind="text: setupNumbers(BudgetSummary.DriversRU())"/> 
+                            </span>
+                            |
+                            <span> 
+                                $<span data-bind="text: setupNumbers(BudgetSummary.Drivers())"/>
+                            </span> 
+                            <span data-bind="visible: true" style="color: #6E6E6E; font-style: italic;">
+                               <!--  <span data-bind="text: Math.round(setupNumbers(BudgetSummary.DriversRU() / BudgetSummary.Discretionary()) * 100)"/>% -->
+                            </span>
+                            <div class="triangle-downWrapper">
+                                <div data-bind="style: {display: displayDriverDetails() ? 'block' : 'none'}" class="triangle-down" />
+                            </div>
+                        </div>
+                    </div>
+                    <div data-bind="click: toggleDiscDetails, css: displayDiscDetails() ? 'selected' : ''">
+                        <p>{!$Label.Discretionary} <i data-bind="css: displayDiscDetails() ? 'fa-chevron-up' : 'fa-chevron-down'" class="fa"/></p>
+                        <div>
+                            
+                            <span data-bind="css: parent.budgetStatus(BudgetSummary.Discretionary(), BudgetSummary.DescretionaryRU())">
+                                $ <span data-bind="text: setupNumbers(BudgetSummary.DescretionaryRU())"/><!----+BudgetSummary.DriversRU() --->
+                                <!--<span data-bind="visible: {!!isBackOfficeUser}"> <span data-bind="text: setupNumbers(BudgetSummary.DescretionaryRU() + BudgetSummary.DriversSpend())"/> </span> -->
+                            </span>	
+                            | 
+                            <span>
+                                $<span data-bind="text: setupNumbers(BudgetSummary.Discretionary())"/>
+                            </span>
+                            <span data-bind="visible: BudgetSummary.DescretionaryRU() - BudgetSummary.Discretionary() > 0">
+                                | $<span data-bind="text: setupNumbers(BudgetSummary.DescretionaryRU() - BudgetSummary.Discretionary())" style="color: #6E6E6E; font-style: italic;" />
+                            </span>
+                            <div class="triangle-downWrapper">
+                                <div data-bind="style: {display: displayDiscDetails() ? 'block' : 'none'}" class="triangle-down"/>
+                            </div>
+                        </div>
+                    </div>
+                </div></div>
+                <div class="POCMetricWrapper"><div>
+                    <div>
+                        <p>{!$Label.Target_KI_Volume}</p>
+                        <p>
+                            <span data-bind="text: setupNumbers(BudgetSummary.TargetVolume()), css: volumeStatus(BudgetSummary.AssignedKIVolume(), BudgetSummary.TargetVolume())"/>
+                            | 
+                            <span data-bind="text: setupNumbers(BudgetSummary.AssignedKIVolume())"/>
+                        </p>
+                    </div>
+                    <div>
+                        <p>{!$Label.Avg_Spend_HL}</p>
+                        <p>
+                            <span data-bind="style: {display: BudgetSummary.TargetVolume() !=0 ? 'inline' : 'none'}">
+                                $<span data-bind="text: setupNumbers(BudgetSummary.AvgSpend_HL())"/>
+                            </span>
+                            <span data-bind="style: {display: BudgetSummary.TargetVolume() ==0 ? 'inline' : 'none'}">
+                                N/A
+                            </span>
+                        </p>
+                    </div>
+                </div></div>
+            </div>
+			
+            <div data-bind="foreach: BrandBudgetList, style: {display: displayTADetails() ? 'inline-block' : 'none'}" class="POCBudgetSummaryTA" id="POCBudgetSummaryBrand">
+                
+                <div data-bind="click: filterBrand(Name(),Id())" class="POCBudgetBrand POCBudgetCell" >
+                    <!--
+                        , style: {'max-width': parent.MaxBrandPerc()}
+                    -->
+                    <div data-bind = "css: { isUserPaid : isUserPaid() === 0 }">
+                    <div data-bind = "css: {isUserPaid : isUserPaid() === true }">
+                        <img data-bind="attr: {src: BrandLogo, alt: Name}"/>
+                    </div>
+                    <div style="margin-top: 5px" data-bind = "css: {isUserPaid : isUserPaid() === true }">
+                        <span data-bind="css: $parent.parent.budgetStatus(Budget(),Spend())">
+                            $<span data-bind="visible: {!!isBackOfficeUser}"><span  data-bind="text: setupNumbers(Spend())"/> </span>    <!--- 08/08/2019 AP Chanes-->
+                            <span data-bind="visible: {!isOnlyBackOffice}"><span  data-bind="text: setupNumbers(0)"/> </span> 
+                            <span data-bind="visible: {!isBackOfficeClubElite}"><span  data-bind="text: setupNumbers(Spend())"/> </span> 
+                        </span>
+                         <span data-bind="visible: !isUserPaid()">|</span> 
+                        <span data-bind="visible: !isUserPaid()">
+                            $<span data-bind="text: setupNumbers(Budget())"/>
+                        </span>
+                        <span data-bind="style: {display: Overage() != 0 ? 'inline' : 'none'}">
+                         <span data-bind="visible: !isUserPaid()">|</span>    
+                            <span data-bind="visible: !isUserPaid()" style="color: #6E6E6E; font-sty-le: italic;">
+                                $<span data-bind="visible: {!!isBackOfficeUser}"><span  data-bind="text: setupNumbers(Overage())"/> </span>    <!--- 08/08/2019 AP Chanes-->
+                            <span data-bind="visible: {!isOnlyBackOffice}"><span  data-bind="text: setupNumbers(0)"/> </span> 
+                            <span data-bind="visible: {!isBackOfficeClubElite}"><span  data-bind="text: setupNumbers(Overage())"/> </span> 
+                            </span>
+                        </span> 
+                    </div>
+                </div>  
+               </div> 
+            </div>
+            <div data-bind="style: {display: displayDriverDetails() ? 'table' : 'none'}" class="POCBudgetSummaryDisc">
+                <div class="POCRow">            
+                    <div class="POCBudgetSummaryDiscCell POCCell">
+                        <div>
+                            {!$Label.Trade_Activation_Overage}
+                        </div>
+                        <div>
+                            $<span data-bind="text: setupNumbers(BudgetSummary.DriversTopUp())"/>    <!---DriversTopUp -->
+                        </div>
+                    </div>
+                <!--    <div class="POCBudgetSummaryDiscCell POCCell">
+                        <div>
+                            {!$Label.Driver}
+                        </div>
+                        <div>
+                            $<span data-bind="text: setupNumbers(BudgetSummary.DriversSpend())"/>
+                        </div>
+                    </div> -->
+                </div>
+            </div>
+
+            <div data-bind="style: {display: displayDiscDetails() ? 'table' : 'none'}" class="POCBudgetSummaryDisc">
+                <div class="POCRow">            
+                    <div class="POCBudgetSummaryDiscCell POCCell">
+                        <div>
+                            {!$Label.Trade_Activation_Overage}
+                        </div>
+                        <div>
+                            $<span data-bind="text: setupNumbers(BudgetSummary.DiscretionaryTopUp())"/> 
+                        </div>
+                    </div>
+                    
+                   <div class="POCBudgetSummaryDiscCell POCCell">
+                        <div>
+                            {!$Label.Super_Bowl_Spend}
+                        </div>
+                        <div>
+                            $<span data-bind="text: setupNumbers(BudgetSummary.UserPaidSpendTopUp())"/>
+                        </div>
+                    </div>
+                    <div class="POCBudgetSummaryDiscCell POCCell">
+                        <div>
+                            Variable Spend
+                        </div>
+                        <div>
+                           $<span data-bind="text: setupNumbers(BudgetSummary.DiscretionaryVariableSpend())"/> 
+                        </div>
+                    </div> 
+                </div>
+            </div>          
+        </div>
+        <!--<div class="toggleButtonWrapper">
+            <div class="toggleButton">
+                <i data-bind="css: displayBudgetSummary() ? 'fa-chevron-up' : 'fa-chevron-down', click: toggleBudgetBar" class="fa"/>
+            </div>
+        </div>-->
+    </div>
+</apex:page>

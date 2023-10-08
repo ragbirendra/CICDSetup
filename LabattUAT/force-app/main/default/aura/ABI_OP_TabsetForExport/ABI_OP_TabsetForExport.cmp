@@ -1,0 +1,28 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global" >
+    <aura:attribute name="isTAAdmin" type="boolean" default="false"/>
+    <aura:attribute name="isTAUser" type="boolean" default="false"/>
+    <div>
+        <span style="font-style: italic; color: red; font-size: 13px;"> <a href="{!$Label.c.ABI_OP_AllSalesTerritories}" target="_blank">Click Here</a> to view the list of all the Sales Territories</span><br/>
+    </div>
+    <lightning:tabset selectedTabId="exportitems" >
+        
+        <lightning:tab label="Export Program Items" id="exportitems">
+            <c:ABI_OP_ExportProgtamItemsByCsv />
+        </lightning:tab>
+        <lightning:tab label="Export Shoppedkit" id="exportShoppedkits">
+            <c:ABI_OP_ExportShoppedkitByCsv />
+        </lightning:tab>
+        <aura:if isTrue="{!v.isTAAdmin}">
+            <lightning:tab label="Export Budget" id="exportbudgets">
+                <c:ABI_OP_ExportBudgetData />
+            </lightning:tab>
+            <lightning:tab label="Export Backoffice Budget" id="exportBackOfficebudgets">
+                <c:ABI_OP_ExportBackOfficeBudgetData />
+            </lightning:tab>
+            <lightning:tab label="Export KI Volume and Disc Budget" id="exportkivolumeandbudgets">
+                <c:ABI_OP_ExportKIVolumeAndDiscBudgetData />
+            </lightning:tab>
+        </aura:if>
+    </lightning:tabset>
+    
+</aura:component>

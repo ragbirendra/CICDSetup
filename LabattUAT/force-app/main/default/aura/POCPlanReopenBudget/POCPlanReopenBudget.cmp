@@ -1,0 +1,89 @@
+<aura:component implements="flexipage:availableForAllPageTypes,force:appHostable" controller="POCPlanReopenBudgetCtrl">
+
+    <aura:attribute name="ownFirstName" type="String" />
+    <aura:attribute name="ownLastName" type="String" />
+    <aura:attribute name="srchTerrCode" type="String" />
+
+    <aura:attribute name="showLoading" type="Boolean" default="false" />
+    
+    <aura:attribute name="selectedYear" type="String" />
+    <aura:attribute name="yearOptions" type="String[]" />
+
+    <aura:attribute name="allTerrBudgets" type="List"  />
+
+    <aura:handler value="{!this}" name="init" action="{!c.doInit}" />
+
+    <lightning:layout multipleRows="true">        
+        <lightning:layoutItem size="12" padding="around-small">
+            <aura:if isTrue="{!v.showLoading}">
+                <lightning:spinner variant="brand" size="medium" aura:id="lightSpin" />
+            </aura:if>
+            <lightning:card title="Search Budget Data" footer="" class="slds-p-around_medium">
+                <div aura:id="srchCont" class="slds-grid slds-gutters slds-grid_vertical-align-end">
+                    <div class="slds-col">
+                        <lightning:input type="text" name="ownFName" value="{!v.ownFirstName}" label="Enter Owner First Name" required="true"/>
+                    </div>
+                    <div class="slds-col">
+                        <lightning:input type="text" name="ownLName" value="{!v.ownLastName}" label="Enter Owner Last Name" required="true"/>
+                    </div>
+                    <!--<div class="slds-col">
+                        <lightning:input type="text" name="terrCodeInp" value="{!v.srchTerrCode}" label="Enter Territory Code" required="true"/>
+                    </div>-->
+                    <div class="slds-col">
+                        <lightning:select name="selectElem" label="Select Budget Year" value="{!v.selectedYear}" required="true" >
+                            <option text="--Please Select--" value=""></option>
+                            <aura:iteration items="{!v.yearOptions}" var="yearOpt">
+                                <option text="{!yearOpt}" value="{!yearOpt}"></option>
+                            </aura:iteration>
+                        </lightning:select>
+                    </div>
+                    <div class="slds-col">
+                        <lightning:button variant="brand" label="Search Data" title="Search Budget Data" onclick="{!c.queryBudgetData}" />
+                    </div>
+                </div>
+            </lightning:card>
+        </lightning:layoutItem>
+        <lightning:layoutItem size="12" padding="around-small">
+            <lightning:card title="Territory Budget Data" footer="" class="slds-p-around_medium">
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                    <thead>
+                        <tr class="slds-line-height_reset">
+                            <th>Name</th>
+                            <th>Territory Code</th>
+                            <th>Territory Name</th>
+                            <th>Business Line</th>
+                            <th>Approval Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <aura:iteration items="{!v.allTerrBudgets}" var="thisBudget">
+                                <tr class="slds-line-height_reset">
+                                    <td>{!thisBudget.Name}</td>
+                                    <td>{!thisBudget.Territory_Code__c}</td>
+                                    <td>{!thisBudget.Sales_Territory__r.Name}</td>
+                                    <td>{!thisBudget.RecordType.Name}</td>
+                                    <td>{!thisBudget.Approval_Status__c}</td>
+                                    <td>
+                                        <aura:if isTrue="{!thisBudget.Approval_Status__c == 'Approved'}">
+                                            <!--<lightning:button variant="destructive" label="REOPEN" title="Reopen Budget" onclick="" data-recId="{!thisBudget.Id}"/>-->
+                                            <a onclick="{!c.reopenBudget}" data-recId="{!thisBudget.Id}" class="slds-button slds-button_destructive">
+                                                <span>REOPEN</span>
+                                            </a>
+                                            <aura:set attribute="else">
+                                                <!--<lightning:button variant="success" label="APPROVE" title="Approve Budget" onclick="" data-recId="{!thisBudget.Id}"/>-->
+                                                <a onclick="{!c.approveBudget}" data-recId="{!thisBudget.Id}" class="slds-button slds-button_success">
+                                                    <span>APPROVE</span>
+                                                </a>
+                                            </aura:set>
+                                        </aura:if>                                        
+                                    </td>
+                                </tr>
+                        </aura:iteration>
+                        
+                    </tbody>
+                </table>
+            </lightning:card>
+        </lightning:layoutItem>
+    </lightning:layout>
+</aura:component>

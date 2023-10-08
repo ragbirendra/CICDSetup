@@ -1,0 +1,212 @@
+<aura:component Controller="GenericDataStampingApex"  implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId" access="global">
+    <aura:attribute name="fileName" type="String" default='No File Selected'/>
+    <aura:attribute name="listData" type="String[]" />
+    <aura:attribute name="indexVar" type="string" default= "" />
+    <aura:attribute name="OptionsPC" type="string[]" />
+    <aura:attribute name="selectedPC" type="String" default="None"/>
+    <aura:attribute name="selectedYr" type="String" default="None"/>
+    <aura:attribute name="selectedCh" type="String" default="None"/>
+    <aura:attribute name="listDataToDisplay" type="String[]" />
+    <aura:attribute name="budgetrecords" type="BudgetLoadUI__c[]"/>
+    <!-- for lighting spinner-->
+    <aura:attribute name="isLoading" type="Boolean" default="false" />
+    <aura:attribute name="showButtons" type="Boolean"/>
+    <aura:attribute name="showTable" type="Boolean"/>
+    <aura:attribute name="exportYearList" type="Integer[]" />
+    <aura:attribute name="fileHeader" type="String"/>
+    <aura:attribute name="headerVal" type="String" />
+    <aura:attribute name="saveFlag" type="Boolean" default="true" />
+    <aura:attribute name="pushtoOnplanFlag" type="Boolean" default="true" />
+    <aura:attribute name="rowDisableFlag" type="Boolean" default="false" /> 
+    <aura:attribute name="ShowDataTOshow" type="boolean" default="true"/> 
+    <!--Modal Popup-->
+    <aura:attribute name="msgToPass" type="String[]"  />
+    <aura:attribute name="OnpointDisCodeArr" type="String[]"  />
+    <aura:attribute name="SalesTerrCodeArr" type="String[]"  />
+    <aura:attribute name="openModal" type="Boolean" default="false" /> 
+    
+    <aura:attribute name="selectedYrForBO" type="String" default="None"/>
+    <aura:attribute name="exportYearListForBO" type="Integer[]" /> 
+    <aura:attribute name="selectedBL" type="String" default="None"/>  
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+     <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    
+    <aura:if isTrue="{!v.openModal}">
+        <c:ModalPopup msgToPass="{!v.msgToPass}" openModal="{!v.openModal}" />
+    </aura:if>
+    
+    <aura:if isTrue="{!v.isLoading}">
+        <lightning:spinner variant="brand"
+                           aura:id="isLoading" class="lightSpin"  size="large" alternativeText="Loading More Data..."/> 
+        
+        <p style="width: 100%;text-align: center;font-weight: bold;top: 11em;position: relative;left: 0px;width: 100vw;" > Please wait while we Load data for you! </p>
+        
+    </aura:if>
+    
+    
+    
+    
+    <div style="overflow: auto;">
+        <!--<div class="slds-horizontal-medium slds-size-1-of-1" id="filterCriteriaDiv" >-->
+        <div class="slds-box" Style="padding-bottom:1px;">
+            
+            <lightning:layout multipleRows="true">
+                
+                <lightning:layoutItem size="3">
+                    <lightning:input accept=".csv" type="file" class="file" label="Upload Budget" aura:id="fileId" onchange="{!c.onFileUpload}"/>
+                    <div class="slds-text-body_small slds-text-color_error" id="fileContainer"> {!v.fileName} </div>
+                </lightning:layoutItem>
+                <lightning:layoutItem size="3">
+                </lightning:layoutItem>
+                <lightning:layoutItem size="6" alignmentBump = "center" class="slds-theme_shade">
+                    <lightning:layout  verticalAlign="end" horizontalAlign="end" class="slds-box">
+                        <lightning:select name="YearList" label="Select Year:" value="{!v.selectedYrForBO}" aura:id="yrSel">
+                            <option value="selectyear"> ----- </option>
+                            <aura:iteration items="{!v.exportYearListForBO}" var="Yr">
+                                <option text="{!Yr}" value="{!Yr}" />
+                            </aura:iteration>
+                        </lightning:select>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <lightning:select name="YearList" label="Select Bussiness Line:" value="{!v.selectedBL}" aura:id="BLsel" onchange="{!c.allowToShow}">
+                            <option value="selectBussinessLine"> ----- </option>
+                            <option value="OutOfHome">Out of Home</option>
+                            <option value="InHome">In Home</option>
+                        </lightning:select>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  
+                        <lightning:button variant="brand" label="Create Budget For Back Office" disabled="{!v.ShowDataTOshow}"  title="Back Office Budget" onclick="{!c.onBudgetBactchCall}"/>
+                    </lightning:layout>
+                </lightning:layoutItem>
+                
+                <lightning:layoutItem size="9" alignmentBump = "left" >
+                    
+                    <lightning:layout multipleRows="false" verticalAlign="end" horizontalAlign="end">
+                        <lightning:layoutItem padding="around-small"  >
+                            <lightning:button variant="brand" label="Push To POC Planning" disabled="{!v.pushtoOnplanFlag}" title="Push To POC Planning" onclick="{!c.pushOnplan}"/>
+                            <lightning:button variant="brand" label="Export template" title="Export template" onclick="{!c.downloadCsv}"/>
+                        </lightning:layoutItem>
+                        
+                    </lightning:layout>
+                    
+                </lightning:layoutItem>
+                
+            </lightning:layout>
+            <!--</div>-->
+        </div>
+        <!--</div>-->
+    </div>
+    <br/>
+    <aura:if isTrue="{!v.showTable}" >
+        <center>
+            <lightning:button variant="brand" label="Validate Record " title="Validate Record" onclick="{!c.ValidateRec}"/>
+            <lightning:button variant="brand" label="Save" title="Save" disabled="{!v.saveFlag}" onclick="{!c.onSave}"/>
+            <lightning:button variant="brand" label="Clear Data " title="Clear Data" onclick="{! c.clear}"/>
+            
+        </center>
+        <br/>
+        <div class="slds-scrollable" >
+            <!--<div class="slds-scrollable_y" style="height:750px; ">
+         <div class="slds-scrollable_x" style="width:100%; ">-->
+            <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                <thead>
+                    <tr class="slds-text-title_caps">
+                        <!--header checkbox for select all-->
+                        <th scope="col">
+                            <div class="slds-truncate" title="Sq No">Sq No</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="District Code">District Code &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="District Name">District Name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Year">Year &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="District Record Type">Business Line &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Region">Region &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Territory Name">Territory Name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Territory Code">Territory Code
+                                &nbsp;&nbsp;&nbsp;
+                            </div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Discretionary Budget">Discretionary Budget
+                                &nbsp;&nbsp;&nbsp;
+                            </div>
+                        </th>
+                        <!-- <th scope="col">
+                        <div class="slds-truncate" title="Territory Record Type">Territory Record Type
+                           &nbsp;&nbsp;&nbsp;
+                        </div>
+                     </th>-->
+                        <th scope="col">
+                            <div class="slds-truncate" title="Brand">Brand
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            </div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Territory Brand Budget">Territory Brand Budget
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <aura:iteration items="{!v.listDataToDisplay}" var="item" indexVar = "indexVarNo">
+                        <tr>
+                            <td >
+                                {!indexVarNo + 1}
+                            </td>
+                            <td>
+                                <lightning:input type="text"  label="" value="{!item.DistrictCode}"  disabled="{!v.rowDisableFlag}" maxlength="10" minlenght="3"/>
+                            </td>
+                            <td>
+                                <lightning:input type="text"  label="" value="{!item.DistrictName}" disabled="{!v.rowDisableFlag}" maxlength="20" minlenght="3"/>
+                            </td>
+                            <td>
+                                <lightning:input type="text" label="" value="{!item.Year}" disabled="{!v.rowDisableFlag}"  maxlength="20" minlenght="3"/>
+                            </td>
+                            <td>
+                                <lightning:input type="text"  label="" value="{!item.BusinessLine}" disabled="{!v.rowDisableFlag}" maxlength="20" minlenght="3"/>
+                            </td>
+                            <td>
+                                <lightning:input type="text"  label="" value="{!item.Region}" disabled="{!v.rowDisableFlag}" maxlength="20" minlenght="3"/>
+                            </td>
+                            <td>
+                                <lightning:input type="text"  label="" value="{!item.TerritoryName}" disabled="{!v.rowDisableFlag}" />
+                            </td>
+                            <td>
+                                <lightning:input type="text"  label="" value="{!item.TerritoryCode}" disabled="{!v.rowDisableFlag}"  />
+                            </td>
+                            <td>
+                                <lightning:input type="text"  label="" value="{!item.DiscretionaryBudget}" disabled="{!v.rowDisableFlag}" maxlength="10"  />
+                            </td>
+                            <!--<td>
+                           <lightning:input type="text"  label="" value="{!item.TerritoryRecordType}" disabled="{!v.rowDisableFlag}"  maxlength="20" minlenght="3"/>
+                        </td>-->
+                            <td>
+                                <lightning:input type="text" label="" value="{!item.Brand}" disabled="{!v.rowDisableFlag}" maxlength="20"   />
+                            </td>
+                            <td>
+                                <lightning:input type="text"  label="" value="{!item.TerritoryBrandBudget}" disabled="{!v.rowDisableFlag}" maxlength="18" />
+                            </td>
+                        </tr>
+                    </aura:iteration>
+                </tbody>
+            </table>
+            <!--</div>
+      </div>-->
+        </div>
+    </aura:if>
+    <br/>
+    
+</aura:component>

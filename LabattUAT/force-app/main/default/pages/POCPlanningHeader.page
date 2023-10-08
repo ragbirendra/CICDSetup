@@ -1,0 +1,654 @@
+<apex:page controller="POCPlanningApp" showHeader="false" sidebar="false">
+    <style type="text/css">
+
+        .POCHeaderWrapper {
+            background-color: #000e41;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 10px 0;
+            z-index: 2;
+            width: 100%;
+        }
+
+        .POCHeader{
+            color: #ffffff;
+            font-size: 120%;
+        }
+
+        .POCHeader div.col-sm-1, .POCHeader div.col-sm-2{
+            padding-right: .5%;;
+        }
+
+        .POCText{
+            font-size: 80%;
+        }
+
+        .POCHeader.row{
+            margin-right: auto;
+            margin-left: auto;
+        }
+
+        .POCHeader select {
+            margin-left: 5px;
+            color: #000000;
+        }
+
+        .POCSubmit button{
+            color: #ffffff;
+            font-weight: normal;
+            text-align: center;
+            background: #5db200;
+            padding: 10px 15px;
+            border: 1px solid #fff;
+        }
+
+        .POCUser{
+            padding-right: 1%;
+        }
+
+        .POCUser div{
+            float: right;
+        }
+
+        .POCSearch{
+            padding-right: 1%;
+        }
+
+        .POCSearch div{
+            color: #000000;
+            float: right;
+        }
+
+        .POCSearch .form-control{
+            padding-top: 3px;
+            padding-bottom: 3px;
+            padding-left: 3px;
+            height: 28px;
+        }
+
+        .POCSearch .form-control-feedback{
+            height: 28px;
+            line-height: 28px;
+        }
+
+        #selectReportDropDown, #selectPlanDropDown {
+            background: #000e41;
+            color: #fff;
+            border: 1px solid #fff;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            text-align: left;
+        }
+
+        #selectReportDropDown span,  #selectPlanDropDown span{
+            padding: 10px 15px;
+        }
+
+        #selectReportDropDown span:last-child, #selectPlanDropDown span:last-child{
+            float: right;
+            padding: 12px 15px;
+        }
+
+        .dropdown-menu li {
+            padding: 7px;
+            margin: 0;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .dropdown-menu li:hover {
+            font-weight: bold;
+            cursor:pointer;
+        }
+
+        .dropdown-menu li:first-child {
+            border: 0;
+        }
+    </style>
+
+    <script type="text/javascript">
+        $('#selectReportDropDown').dropdown();
+        function getBaseURL() {
+
+            var url = location.href;
+            var baseURL = url.substring(0, url.indexOf('/', 14));
+			console.log('---base url--'+baseURL);
+            return baseURL + "/";
+        }
+
+        function POCHeaderVM(parent) {
+            parent.initialYearSet = true;
+
+            var self = this;
+            self.parent = parent;
+
+            self.Plans = ko.observableArray();
+            self.Reports = ko.observableArray();
+            self.Plan = ko.observable();
+
+            self.redirectUser = function(data, event) {
+                console.log('---base url--'+getBaseURL());
+                var url = getBaseURL() + data + '?pv0='+parent.UrlParameters.TerritoryId.substring(0,15);
+                window.open(
+                url,
+                '_blank'
+                );
+            }
+
+            self.loadData = function(){
+                POCPlanningApp.getRepReports(function(result, event) {
+                    self.Reports(result);
+                });
+               
+                POCPlanningApp.InitiateApp(parent.UrlParameters.TerritoryId, function(result, event){
+                    console.log("res :::", result);
+                    self.initialLoad = true;
+
+                    //JMT edit - prevent epic fail if no result comes back, show modal to inform user
+                    if( !result || result.hasOwnProperty('IHYearOptions') === false){
+                      console.log('!!!!!!result missing data!!!!!! - result data:');
+                      console.log(result);
+                      $('#modalInvalidPermissions').modal();
+                      return false;
+                    }
+
+                    /*if ((parent.UrlParameters.Year == 0 || typeof parent.UrlParameters == 'undefined') && result.IHYearOptions.length > 0) {
+                        parent.UrlParameters.Year = result.IHYearOptions[0].Year;
+                    }*/
+                    if( !result || result.hasOwnProperty('NIHYearOptions') === false){
+                      console.log('!!!!!!result missing data!!!!!! - result data:');
+                      console.log(result);
+                      $('#modalInvalidPermissions').modal();
+                      return false;
+                    }
+
+                    if ((parent.UrlParameters.Year == 0 || typeof parent.UrlParameters == 'undefined') && result.OOHYearOptions.length > 0 && result.Plan =='Out of Home') {
+                        console.log('parent.UrlParameters.Year test 1'+parent.UrlParameters.Year);
+                        parent.UrlParameters.Year = result.OOHYearOptions[0].Year;
+                    }
+                    if ((parent.UrlParameters.Year == 0 || typeof parent.UrlParameters == 'undefined') && result.NIHYearOptions.length > 0 && result.Plan =='In Home IH') {
+                        console.log('parent.UrlParameters.Year test 2'+parent.UrlParameters.Year);
+                        parent.UrlParameters.Year = result.NIHYearOptions[0].Year;
+                    }
+                    else if ((parent.UrlParameters.Year == 0 || typeof parent.UrlParameters == 'undefined') && result.IHYearOptions.length > 0) {
+                        console.log('parent.UrlParameters.Year test 3'+parent.UrlParameters.Year);
+                        parent.UrlParameters.Year = result.IHYearOptions[0].Year;
+                    }
+                    
+                    if(!result.isBackOfficeUser){               //AP Changes Check W-013969
+                    self.SetTerritory(result.SelectedYear.Territory);
+                    }
+					if(result.ThisUser.Id == result.ThisUser.ManagerId){ //RU
+				    self.SetTerritory(result.SelectedYear.Territory);
+					}
+					
+                    if(typeof parent.KitThreshold == "undefined"){
+                        parent.KitThreshold = new KitThresholdConstr(
+                            result.KitThreshold.Driver, //Driver
+                            result.KitThreshold.Visibility //Visibility
+                        );
+                    }
+
+                    if(typeof parent.ThisUser == "undefined"){
+                        parent.ThisUser = new User(
+                            result.ThisUser.Id, //Id
+                            result.ThisUser.FirstName + " " + result.ThisUser.LastName, //Name,
+                            result.ThisUser.LanguageLocaleKey, //LanguageLocaleKey
+                            result.ThisUser.ManagerId // added by ragbirendra, enable shopping window for manager
+                        );
+                    }
+                    if(typeof self.Territory == "undefined"){
+                    if(!result.isBackOfficeUser){                      //W-013969 AP Changes
+                        self.Territory = new TerritoryConstr(
+                            self, //parent
+                            result.SelectedYear.Territory.Id, //Id,
+                            result.SelectedYear.Territory.Sales_Territory__r.Name, //Name,
+                            result.SelectedYear.Territory.Sales_Territory__r.lboc_District__c, //ParentAreaName,
+                            result.SelectedYear.Territory.OwnerId, //OwnerId,
+                            result.SelectedYear.Territory.Owner.Name, //OwnerName,
+                            result.SelectedYear.Territory.Approval_Status__c //ApprovalStatus
+                        );
+                    }
+                    else{
+                                self.Territory = new TerritoryConstr(      //W-013969 AP Changes
+                                self, //parent
+                                result.onPointTer.Id, //Id,
+                                result.onPointTer.Name, //Name,
+                                result.onPointTer.lboc_District__c, //ParentAreaName,
+                                result.onPointTer.OwnerId, //OwnerId,
+                                result.onPointTer.Owner.Name, //OwnerName,
+                                result.onPointTer.lboc_Area__c, //ApprovalStatus 
+                                );
+                                      
+                        }
+                    }
+                    
+
+                    if(typeof self.TerritoryOwner == "undefined"){
+                     if(!result.isBackOfficeUser){                           //AP Changes 
+                            self.TerritoryOwner = new User(
+                            result.SelectedYear.Territory.OwnerId, //Id
+                            result.SelectedYear.Territory.Owner.Name, //Name,
+                            null //LanguageLocaleKey
+                        );
+                       }
+					   else if(result.ThisUser.Id == result.ThisUser.ManagerId){//RU
+						    self.TerritoryOwner = new User(
+                            result.SelectedYear.Territory.OwnerId, //Id
+                            result.SelectedYear.Territory.Owner.Name, //Name,
+                            null //LanguageLocaleKey
+                        );   
+					   }
+						   
+                       else                        //AP Changes W-013969
+                       {
+                               console.log('=====in a set TerOwner');
+                                    self.TerritoryOwner = new User(
+                                    result.onPointTer.OwnerId, //Id
+                                    result.onPointTer.Owner.Name, //Name,
+                                    null //LanguageLocaleKey
+                                    );    
+                       }
+                    }
+                    if(result.isBackOfficeUser)
+                        {
+                            self.updateData(result.onPointTer);                   //AP Changes W-013969          
+                        }
+
+                    if(self.Plans().length<1){
+                        if(result.OOHYearOptions.length!=0){
+                            self.Plans.push({name: '{!$Label.Out_of_Home}'});
+                        }
+
+                        if(result.IHYearOptions.length!=0){
+                            self.Plans.push({name: '{!$Label.In_Home}'});
+                        }
+                        if(result.NIHYearOptions.length!=0){
+                            self.Plans.push({name: '{!$Label.In_Home_IH}'});
+                        }
+                    }
+                    
+                    //If OOH Plan Load OOH List
+                    if(result.Plan == '{!$Label.Out_of_Home}'){
+                        result.OOHYearOptions.forEach(function(item, i){
+                            self.BudgetYearOptions.push( new SelectOption(
+                                item.Year, //Name,
+                                item.Territory //Value
+                            ));
+                        });
+                    }
+
+                    //If IH Plan Load IH List
+                    else if(result.Plan == '{!$Label.In_Home}'){
+                        result.IHYearOptions.forEach(function(item, i){
+                            self.BudgetYearOptions.push( new SelectOption(
+                                item.Year, //Name,
+                                item.Territory //Value
+                            ));
+                        });
+                    }
+                        // If New IH Plan Load NIH List
+                        else if(result.Plan == '{!$Label.In_Home_IH}'){
+                        result.NIHYearOptions.forEach(function(item, i){
+                            self.BudgetYearOptions.push( new SelectOption(
+                                item.Year, //Name,
+                                item.Territory //Value
+                            ));
+                        });
+                    }
+                    
+
+                   result.OOHYearOptions.forEach(function(item, i){
+                        self.OOHYearOptions.push( new SelectOption(
+                            item.Year, //Name,
+                            item.Territory //Value
+                        ));
+                    });
+
+                    result.IHYearOptions.forEach(function(item, i){
+                        self.IHYearOptions.push( new SelectOption(
+                            item.Year, //Name,
+                            item.Territory //Value
+                        ));
+                    });
+                    result.NIHYearOptions.forEach(function(item, i){
+                        self.NIHYearOptions.push( new SelectOption(
+                            item.Year, //Name,
+                            item.Territory //Value
+                        ));
+                    });    
+
+                    if(result.Plan != self.Plan()){
+                        self.Plan(result.Plan);
+                        parent.UrlParameters.Plan = self.Plan();
+                    }
+
+                    self.SelectedBudgetYear(
+                        result.SelectedYear.Territory //Value
+                    );
+
+                    console.log(self.SelectedBudgetYear());
+                        //if(!result.isBackOfficeUser){
+                    parent.setQueryString(parent.UrlParameters.Page, parent.UrlParameters.Year, self.Territory.Id(), parent.UrlParameters.POCId, result.Plan);
+                        //}
+                        //else{
+                        //  parent.setQueryString(parent.UrlParameters.Page, parent.UrlParameters.Year, null, parent.UrlParameters.POCId, result.Plan);
+                        //}
+                    parent.disableAppInputCheck();
+
+                    parent.ApplyHeaderBinding();
+
+                    self.initialLoad = false;
+                    parent.initialYearSet = false;
+                });
+            }
+
+            self.BudgetYearOptions = ko.observableArray();
+            self.OOHYearOptions = ko.observableArray();
+            self.IHYearOptions = ko.observableArray();
+            self.NIHYearOptions = ko.observableArray();
+
+            self.SelectedBudgetYear = ko.observable();
+
+            self.SetTerritory = function(Territory){
+                parent.SalesTerritory = Territory.Sales_Territory__c;
+                parent.Region = Territory.Sales_Territory__r.lboc_Region__c;
+                parent.RegionID = Territory.Sales_Territory__r.lboc_Region_ID__c;
+                parent.DistrictID = Territory.Sales_Territory__r.lboc_District_ID__c;
+            }
+
+            //If Plan changes change out year options and query Budget data
+            self.Plan.subscribe(function(){
+                if(!self.initialLoad){
+                    console.log(self.Plan());
+                    parent.initialYearSet = true;
+                    self.BudgetYearOptions.removeAll();
+                    if(self.Plan() == '{!$Label.Out_of_Home}'){
+                        self.BudgetYearOptions(self.OOHYearOptions().slice());
+                    }
+                    else if(self.Plan() == '{!$Label.In_Home}'){
+                        self.BudgetYearOptions(self.IHYearOptions().slice());
+                    }
+                    else if(self.Plan() == '{!$Label.In_Home_IH}'){
+                        console.log('self.NIHYearOptions().slice():::'+self.NIHYearOptions().slice());
+                        self.BudgetYearOptions(self.NIHYearOptions().slice());
+                    }
+                    parent.initialYearSet = false;
+                    console.log('self.Plan():::::'+self.Plan());
+                    parent.UrlParameters.Plan = self.Plan();
+                    //TODO - change this to maintain the year set in header, this is a temporary fix
+                    var TempBudgetYearOption = self.BudgetYearOptions()[0].Value;
+
+                    self.SetTerritory(TempBudgetYearOption);
+                    self.SelectedBudgetYear(TempBudgetYearOption);
+                }
+            });
+
+            self.SelectedBudgetYear.subscribe(function(){
+                if(!parent.initialYearSet && typeof self.SelectedBudgetYear() != 'undefined' && typeof self.SelectedBudgetYear().Budget_Year__c != 'undefined'){
+                    
+                    console.log('===selected year===',self.SelectedBudgetYear());
+                    //if(!self.SelectedBudgetYear().Sales_Territory__r.lboc_Region__c == 'National')
+                    // {
+                    	self.updateBudgetData(self.SelectedBudgetYear());
+                    //  }
+                    //else{
+                    //  	self.updateData(self.SelectedBudgetYear());
+                    //   }
+                    parent.UrlParameters.Year = self.SelectedBudgetYear().Budget_Year__c;
+                    parent.UrlParameters.TerritoryId = self.SelectedBudgetYear().Id;
+                    parent.UrlParameters.Page = "Dashboard";
+                    console.log('---base url--'+getBaseURL());
+                    var url = getBaseURL() + 'apex/POCPlanningApp?Page=Dashboard&Plan=' +parent.UrlParameters.Plan+'&Year='+self.SelectedBudgetYear().Budget_Year__c+'&TerritoryId='+self.SelectedBudgetYear().Id; 
+                    console.log('---Final URL --',url);
+                    //window.location.href =url;
+                    //parent.loadBudgetSummary();
+                    
+                    
+
+                    self.showHidePages();					
+                    parent.setQueryString(parent.UrlParameters.Page, parent.UrlParameters.Year, parent.UrlParameters.TerritoryId, null, parent.UrlParameters.Plan);
+                    //window.location.reload();
+                     parent.loadBudgetSummary();
+                }
+            });
+
+
+
+            self.updateBudgetData = function(Territory){
+                console.log('===Territory==',Territory);
+                self.Territory.Id(Territory.Id);
+                self.Territory.Name(Territory.Sales_Territory__r.Name);
+                self.Territory.ParentAreaName(Territory.Sales_Territory__r.lboc_District__c);
+                self.Territory.OwnerId(Territory.OwnerId);
+                self.Territory.OwnerName(Territory.Owner.Name);
+                var str=Territory.Sales_Territory__r.Name;
+                if(str.includes("Back Office")){
+                	
+                    self.Territory.ApprovalStatus('Back Office');
+                }
+                else{
+                    self.Territory.ApprovalStatus(Territory.Approval_Status__c);
+                }    
+            }
+             self.updateData=function(Territory){               //AP Changes W-013969
+                console.log('===self==',Territory.Name);
+                console.log('=====',Territory+'===',Territory.Name);
+                //self.Territory.Id(backOfcTerritory.Id);
+                self.Territory.Name(Territory.Name);
+                self.Territory.OwnerId(Territory.OwnerId);
+                self.Territory.OwnerName(Territory.Owner.Name);
+                self.Territory.ParentAreaName(Territory.lboc_District__c);
+                self.Territory.ApprovalStatus('Back Office');
+                }
+
+            self.showHidePages = function(){
+                //If Out of Home App
+                if(parent.UrlParameters.Plan != '{!$Label.In_Home}'){
+                    self.hideIHPages();
+                }
+                //If In Home App
+                else {
+                    self.hideOOHPages();
+                }
+                self.hideShoppingPages();
+            }
+
+            self.hideOOHPages = function(){
+                console.log("self.hideOOHPages");
+                $("#POCBudgetSummary").css("display", "none");
+                $("#POCPlanningDashboardId").css("display", "none");
+            }
+
+            self.hideIHPages = function(){
+                $("#POCPlanningDashboardIHId").css("display", "none");
+            }
+
+            self.hideShoppingPages = function(){
+                $("#POCPlanningPOCNavigationWrapper").css("display", "none");
+                $("#POCPlanningTradeActivationId").css("display", "none");
+                $("#POCPlanningDiscretionaryId").css("display", "none");
+                $("#POCPlanningVariableId").css("display", "none");
+                $("#POCPlanningDriverId").css("display", "none");
+            }
+
+            self.confirmFinalPlan = function() {
+                $('#modalPlanSubmissionConfirmation').modal();
+                $('#modalPlanSubmissionConfirmation .confirmModal').on('click', function() {
+                    self.submitFinalPlan();
+                });
+            }
+
+            self.submitFinalPlan = function() {
+                $('#loader-wrapper').css('display', 'block');
+                POCPlanningApp.submitFinalPlan(parent.POCBudgetSummary.BudgetSummary.Id(), function(result, event) {
+                    $('#loader-wrapper').css('display', 'none');
+                    console.log('Testing............',parent.POCBudgetSummary.BudgetSummary.Id());//test test
+                    if (result.ok) {
+                        $('#modalPlanSubmission').modal();
+                        $('#modalPlanSubmission').on('hidden.bs.modal', function () {
+                            location.reload();
+                        });
+                    } else {
+                        $('#modalPlanSubmissionFailure .modal-body').text(result.message);
+                        $('#modalPlanSubmissionFailure').modal();
+                    }
+                });
+            }
+
+            self.changePlan = function(PlanName){
+                self.Plan(PlanName);
+            }
+
+            //Function calls begin here
+            self.loadData();
+
+        }
+
+        function TerritoryConstr(parent, Id, Name, ParentAreaName, OwnerId, OwnerName, ApprovalStatus){
+            var self = this;
+            self.Id = ko.observable(Id);
+            self.Name = ko.observable(Name);
+            self.ParentAreaName = ko.observable(ParentAreaName);
+            self.OwnerId = ko.observable(OwnerId);
+            self.OwnerName = ko.observable(OwnerName);
+            self.ApprovalStatus = ko.observable(ApprovalStatus)
+
+            self.ApprovalStatus.subscribe(function(){
+                console.log("self.Status.subscribe");
+                parent.parent.disableAppInputCheck();
+            });
+        }
+    </script>
+    <div class="modal fade" id="modalPlanSubmissionConfirmation" tabindex="-1" role="dialog" aria-labelledby="modalPlanSubmissionConfirmation">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">{!$Label.Submit_Plan_Confirmation_Title}</h4>
+            </div>
+            <div class="modal-body">
+                {!$Label.Submit_Plan_Confirmation_Message}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary confirmModal" data-dismiss="modal" aria-label="Close">{!$Label.Confirm}</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close">{!$Label.Cancel}</button>
+            </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="modalPlanSubmission" tabindex="-1" role="dialog" aria-labelledby="modalPlanSubmission">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="location.reload();"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">{!$Label.Submit_Plan_Success_Title}</h4>
+            </div>
+            <div class="modal-body">
+                {!$Label.Submit_Plan_Success_Message}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="location.reload();">{!$Label.Ok}</button>
+            </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="modalPlanSubmissionFailure" tabindex="-1" role="dialog" aria-labelledby="modalPlanSubmissionFailure">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">{!$Label.Submit_Plan_Failure_Title}</h4>
+            </div>
+            <div class="modal-body">
+                <!--Dynamically Added from Server Response-->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close">{!$Label.Ok}</button>
+            </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="modalInvalidPermissions" tabindex="-1" role="dialog" aria-labelledby="modalPlanSubmissionFailure">
+      <div class="modal-dialog" role="document">
+          <div class="modal-content">
+          <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title errorMessageHeader">No Data From Salesforce</h4>
+          </div>
+          <div class="modal-body">
+              <span class="errorMessageContent">Error: Salesforce has returned no data.</span> Most likely reason for this is your user profile does not have the proper permissions. <a id="errorMessageEmail" href="mailto:onplansupport@Labatt.com?subject=This SF OnPlan User has insufficient permissions to use POC Planning App&body=This user does not have the appropriate permissions to access POC Planning App Data">Please click here to email your OnPlan Support Team about this issue.</a> A member of the support team will follow up with you as soon as possible.<br /><br />Please select "Ok" to continue planning.
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close">{!$Label.Ok}</button>
+          </div>
+          </div>
+      </div>
+    </div>
+    <div class="POCHeaderWrapper" id="POCHeaderWrapperId">
+        <div class="row vertical-center POCHeader" id="POCHeaderId">
+            <div class="POCSubmit col-md-2 col-lg-2">
+                <button type="button" data-bind="click: confirmFinalPlan">{!$Label.Submit_Final_Plan}</button>
+            </div>
+            <div class="col-md-2 col-lg-2">
+                <div class="dropdown">
+                    <button id="selectPlanDropDown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span data-bind="html: Plan" style="display: inline-block;"></span>
+                        <span style="display: inline-block; border-left: 1px solid #fff"><i class="fa fa-caret-down" aria-hidden="true"></i></span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="selectReportDropDown" style="color: #323232; width: 100%;" data-bind="foreach: Plans">
+                        <li data-bind="text: name, click: $parent.changePlan.bind($data, name)"></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-2 col-lg-2">
+                <div style="text-align: center">
+                    <span class="POCLabel">{!$Label.Year}</span>
+                    <select data-bind="options: BudgetYearOptions, optionsText: 'Name', optionsValue: 'Value', value: SelectedBudgetYear" id="BudgetYearOptions"/>
+                </div>
+            </div>
+            <div class="col-md-3 col-lg-2">
+                <div>
+                    <span class="POCLabel">{!$Label.District}: </span>
+                    <span data-bind="text: Territory.ParentAreaName" class="POCText"/>
+                </div>
+                <div>
+                    <span class="POCLabel">{!$Label.Territory}: </span>
+                    <span data-bind="text: Territory.Name" class="POCText"/>
+                </div>
+                  
+            </div>           
+            
+            <div class="col-md-3 col-lg-2">
+                <div>
+                    <span class="POCLabel">{!$Label.Rep}: </span>
+                    <span data-bind="text: Territory.OwnerName" class="POCText"/>
+                </div>
+                <div>
+                    <span class="POCLabel">{!$Label.Approval_Status}: </span>
+                    <span data-bind="text: Territory.ApprovalStatus" class="POCText"/>
+                </div>
+               
+            </div>
+            <!----For US #W014023 -----Susmita--->
+            <div class="col-md-3 col-lg-2">
+                <div>
+                    <span class="POCLabel"><U>{!$Label.For_Support_Contact}:</U></span>          
+                    <span class="POCText">POCPsupport@labatt.com</span> 
+                </div>
+            </div>
+            <div class="col-lg-2 hidden-md hidden-sm hidden-xs" style="text-align:right;">
+                <div class="dropdown">
+                    <button id="selectReportDropDown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span style="display: inline-block;">{!$Label.Select_Report}</span>
+                        <span style="display: inline-block; border-left: 1px solid #fff"><i class="fa fa-caret-down" aria-hidden="true"></i></span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="selectReportDropDown" style="color: #323232; width: 100%;" data-bind="foreach: Reports">
+                        <li data-bind="text: Name, click: $parent.redirectUser.bind($data, Id)"></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</apex:page>

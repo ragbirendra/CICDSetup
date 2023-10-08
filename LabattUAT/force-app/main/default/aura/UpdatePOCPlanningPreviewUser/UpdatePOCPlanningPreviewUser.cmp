@@ -1,0 +1,55 @@
+<aura:component implements="flexipage:availableForAllPageTypes,force:appHostable" controller="UpdatePOCPlanningPreviewUserCtrl" >
+
+    <aura:attribute name="listPreviewUsers" type="List" />
+    <aura:attribute name="isDisabled" type="Boolean" default="true" />
+    <aura:attribute name="showLoading" type="Boolean" default="false" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+
+    <lightning:layout multipleRows="true">
+        
+        <aura:if isTrue="{!v.showLoading}">
+            <lightning:spinner variant="brand" size="medium" aura:id="lightSpin" />
+        </aura:if>
+
+        <lightning:layoutItem size="8" padding="around-small"> 
+            <lightning:card title="Actions" footer="" class="slds-p-around_xx-small">
+                <lightning:button name="editButt" label="Edit Preview Users" variant="brand" onclick="{!c.makeEditable}" />
+                <lightning:button name="saveButt" label="Save Preview Users" variant="brand" onclick="{!c.saveOperation}" disabled="{!v.isDisabled}"/>
+                <lightning:button name="cancelButt" label="Cancel Operation" variant="brand" onclick="{!c.cancelOperation}" />
+            </lightning:card>
+        </lightning:layoutItem>
+        
+        <lightning:layoutItem size="6" padding="around-small">                        
+            <span>Please note:</span>
+            <ul>
+                <li><span style="font-style: italic;font-weight: bold; color: red; font-size: 14px;">If the email id is incorrect, the user will not be able to preview </span></li>            
+            </ul>
+        </lightning:layoutItem>
+
+        <lightning:layoutItem size="12" padding="around-small">
+            <lightning:card title="Update Preview User Email" footer="" class="slds-p-around_xx-small">
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                    <thead>
+                        <tr class="slds-line-height_reset">
+                            <td>Preview As</td>
+                            <td>User Email</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <aura:iteration items="{!v.listPreviewUsers}" var="thisPrevUser">
+                            <tr class="slds-line-height_reset">
+                                <td><span>{!thisPrevUser.previewAs__c}</span></td>
+                                <td>
+                                    <lightning:input type="email" value="{!thisPrevUser.user_Email_Id__c}" readonly="{!v.isDisabled}" />
+                                </td>                            
+                            </tr>
+                        </aura:iteration>
+                    </tbody>
+                </table>
+            </lightning:card>
+        </lightning:layoutItem>
+        
+    </lightning:layout>
+</aura:component>

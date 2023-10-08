@@ -1,0 +1,525 @@
+<apex:page showHeader="false" sidebar="false">
+    <style type="text/css">
+        
+        .POCPlanningDriver{
+        display: none;
+        width: 100%;            
+        z-index: 0;         
+        padding-bottom: 15px;
+        }
+        
+        .POCPlanningDriver .ProgramShop{
+        right: 0px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        padding-left: 1%;
+        }       
+    </style>
+    
+    <script type="text/javascript">
+    var approvalStatus;
+    var planningDateList = [];
+    var planningDateListIH = [];
+    var plan;
+    var budgetYear;
+    function POCDriverVM(parent) {
+        var self = this;
+        self.parent = parent;
+        self.initialQuery = true;
+        self.initialLoad = true;
+        
+        self.BrandList = ko.observableArray();
+        self.typeList = ko.observableArray();
+        self.BrandListIndex = ko.observable();
+        self.typeListIndex = ko.observable();
+        self.HexColor = ko.observable();
+        self.itemList = ko.observableArray();
+        self.ItemTypeByBrand = ko.observable({});
+        
+        self.fetchDriverData = function(POCId) {
+            POCPlanningApp.InitiateApp(parent.UrlParameters.TerritoryId, function(result, event){
+                console.log('InitiateAppintradeacti',parent.UrlParameters.Plan);
+                console.log('InitiateAppintradeacti1111',result.SelectedYear.Territory.Approval_Status__c);
+                console.log('plan',result.Plan);
+                plan = result.Plan;
+                budgetYear = result.SelectedYear.Territory.Budget_Year__c;
+    			console.log('budgetYear',budgetYear);
+                approvalStatus = result.SelectedYear.Territory.Approval_Status__c;
+                if(result.isBackOfficeUser){
+                    approvalStatus='Back Office'; 
+                }
+                console.log('ApprovalStatus ',approvalStatus);
+            }),
+               
+                    POCPlanningApp.getFleixblePlanningWindowforDrivers(function(result1, event){
+                        console.log('getFleixblePlanningWindowforDrivers',result1);
+                        planningDateList = result1;  
+                    });
+
+                POCPlanningApp.getFleixblePlanningWindowforDriversIH(function(result1, event){
+                        console.log('getFleixblePlanningWindowforDrivers',result1);
+                        planningDateListIH = result1;  
+                    });
+
+              
+                POCPlanningApp.Driver(POCId, parent.POCBudgetSummary.IsSpecialty(), function(result, event) {
+                    self.BrandList.removeAll();
+                    console.log(result);
+                    result.forEach(function(brand, i) {
+                        brand.itemList.sort(function(a, b) {
+                            var AType = a.Item_Type || 'Other';
+                            var BType = b.Item_Type || 'Other';
+                            if(AType < BType) return -1;
+                            if(AType > BType) return 1;
+                            return 0;
+                        });
+                        var checkIfItemTypeExists = [];
+                        self.ItemTypeByBrand[brand.Id] = [];
+                        self.BrandList.push(new DriverBrand(
+                            self,
+                            i,
+                            brand.Id,
+                            brand.Name, 
+                            parent.cleanValue(brand.ItemSpend),
+                            brand.HexColor,
+                            brand.itemList.map(function(item, w) {
+                                var itemType = item.Item_Type || 'Other';
+                                if (checkIfItemTypeExists.indexOf(itemType) == -1) {
+                                    checkIfItemTypeExists.push(itemType);
+                                    self.ItemTypeByBrand[brand.Id].push({ Name: itemType, data: [w] });
+                                } else {
+                                    self.ItemTypeByBrand[brand.Id][checkIfItemTypeExists.indexOf(itemType)].data.push(w);
+                                }
+                                return new DriverItem(
+                                    self, 
+                                    item.Id,
+                                    item.Name,
+                                    item.Price,
+                                    item.Qty,
+                                    item.QtyRmng,
+                                    item.QtyAllocatedToArea,
+                                    item.POCSpendCategory,
+                                    item.AltID,
+                                    item.Item_Type, 
+                                    item.Description,                                    
+                                    item.SmlImage, //SmlImage, 
+                                    item.LrgImage, //LrgImage, 
+                                    item.Size, //Size, 
+                                    item.Dimensions, //Dimensions
+                                    item.Material //Material
+                                )
+                            })
+                        ));
+                    });
+                    parent.ApplyPOCDriverBinding();
+                    self.initialQuery = false;
+                    self.loadBrandItems(0);
+                    self.initialLoad = false;
+                });
+        }
+        
+       self.fetchDriverData(parent.UrlParameters.POCId);
+        
+        self.toggleCustomizableModal = function(show, title, body) {
+            if (show && !self.initialLoad) {
+                parent.loadDialog(title, body);
+                $('#modalGeneric').modal();
+            }
+        }
+        
+        
+        self.loadBrandItems = function(i) {
+            if (!self.initialQuery) {
+                self.initialLoad = true;
+                self.BrandListIndex(i); 
+                self.BrandList()[i].selected(true);
+                self.typeList.removeAll();
+                self.ItemTypeByBrand[self.BrandList()[i].Id()].forEach(function(iT, w) {
+                    self.typeList.push( new itemType(self, w, iT.Name, iT.data, self.BrandList()[i].HexColor()) );
+                });
+                self.loadItemTypes(0);
+                self.initialLoad = false;
+            }                               
+        }
+        
+        self.loadItemTypes = function(i) {
+            if (!self.initialQuery) {
+                self.typeListIndex(i);
+                var indexArray = self.typeList()[i];
+                var listOfitems = self.BrandList()[self.BrandListIndex()].itemList();
+                var filteredList = [];
+                indexArray.data().forEach(function(i) {
+                    filteredList.push(listOfitems[i]);
+                });
+                self.initialLoad = true;
+                self.itemList(filteredList);
+                self.initialLoad = false;
+                indexArray.selected(true);
+            }
+        }
+        
+        self.unselectBrands = function() {
+            for (var i = 0; i < self.BrandList().length; i++){
+                if (i != self.BrandListIndex()) {
+                    self.BrandList()[i].selected(false);
+                }
+            }
+        }
+        
+        self.unselectItemType = function() {
+            for (var i = 0; i < self.typeList().length; i++) {
+                if (i != self.typeListIndex()) {
+                    self.typeList()[i].selected(false);
+                }
+            }
+        }
+        
+        self.updateBrands = function(id, diff, qty, oldqty, getBrandList, AltID){
+            var total = 0;
+            getBrandList.itemList().forEach(function(item) {
+                total += item.TotalSpend();
+                if (item.Id() == id) {
+                    item.QtyRmng(parseInt(item.QtyRmng()) + parseInt(oldqty) - parseInt(qty));
+                    if(item.AltID() == null){
+                        item.AltID(AltID);
+                    }
+                }
+            });
+            getBrandList.itemSpend(total);
+            
+            self.updateBudget(diff);
+        }
+        
+        self.updateBudget = function(diff){
+            console.log('====POCNav---POCBudget.Driver--',parent.POCPlanningPOCNavigation.POCBudget.Driver());
+            var isBackOffice=parent.parent.POCPlanningPOCNavigation.isBackOffice;
+            if(!isBackOffice){
+                parent.POCPlanningPOCNavigation.POCBudget.Driver(
+                    parseFloat((
+                        parent.POCPlanningPOCNavigation.POCBudget.Driver() +
+                        diff
+                    ).toFixed(2))
+                );
+                parent.POCBudgetSummary.BudgetSummary.DriversSpend(       //DriversSpend
+                    parseFloat((
+                        parent.POCBudgetSummary.BudgetSummary.DriversSpend() + 
+                        diff
+                    ).toFixed(2))
+                );
+            }
+            else{
+                parent.POCPlanningPOCNavigation.POCBudget.Driver(
+                    parseFloat((
+                        parent.POCPlanningPOCNavigation.POCBudget.Discretionary()+parent.POCBudgetSummary.BudgetSummary.DriversSpend()+diff //+parent.POCBudgetSummary.BudgetSummary.DiscretionaryTopUp()
+                    ).toFixed(2)) );
+               /*   parent.POCBudgetSummary.BudgetSummary.DriversSpend(
+                     parseFloat(( parent.POCBudgetSummary.BudgetSummary.DriversSpend()+diff
+                    ).toFixed(2))
+                    );*/
+                parent.POCBudgetSummary.BudgetSummary.DriversSpend(
+                    parseFloat(( parent.POCBudgetSummary.BudgetSummary.DriversSpend()+diff
+                               ).toFixed(2))
+                );
+            }    
+            
+        }
+        
+        self.sumBrandDriverSpend = function(id, diff, qty, oldqty, hasQty, POCSpendCategory, AltID) {
+            
+            var getBrandList = self.BrandList()[self.BrandListIndex()];
+            
+            if (!parent.POCBudgetSummary.BudgetSummary.NeverApproved()) {
+                if(typeof parent.POCPlanningDashboard == "undefined"){
+                    POCPlanningApp.setAnnuaLPOCBudgetPlanToUpdated(parent.UrlParameters.POCId, function() {});
+                } else{
+                    parent.POCPlanningDashboard.territoryPOCList()[parent.POCListIndex].IsUpdated(true);
+                }                       
+            }
+            if(typeof window.Region=='undefined')
+            {
+                window.Region=null;
+            }
+            POCPlanningApp.OnDriverChange(parent.UrlParameters.POCId, id, qty, oldqty, hasQty, POCSpendCategory, AltID, parent.POCBudgetSummary.IsSpecialty(), window.Region, function(response) {
+                
+                if (response.IsSuccess) {
+                    self.updateBrands(id, diff, qty, oldqty, getBrandList, response.DriverItemId);
+                } else {
+                    getBrandList.itemList().forEach(function(item) {
+                        if (item.Id() == id) {
+                            item.resetQty(true);
+                            item.Qty(parseInt(response.OldQty));
+                            item.QtyRmng(parseInt(response.QtyRmng));
+                        }
+                    });
+                }
+            });
+        }
+        
+    }
+    
+    function DriverBrand(parent, i, Id, Name, itemSpend, HexColor, itemList) {
+        
+        var self = this;
+        self.i = ko.observable(i);
+        self.Id = ko.observable(Id);
+        self.Name = ko.observable(Name);
+        self.itemSpend = ko.observable(itemSpend);
+        self.HexColor = ko.observable(HexColor);
+        self.itemList = ko.observableArray(itemList);
+        self.selected = ko.observable(false);
+        
+        self.selected.subscribe(function() {
+            if (self.selected()) {
+                parent.HexColor(self.HexColor());
+                parent.unselectBrands();
+            }
+        }); 
+        
+    }
+    
+    function DriverItem(parent, Id, Name, Price, Qty, QtyRmng, QtyAllocatedToArea, POCSpendCategory, AltID, Item_Type, Description, SmlImage, LrgImage, Size, Dimensions, Material) {
+        
+        var self = this;            
+        self.Id = ko.observable(Id);
+        self.AltID = ko.observable(AltID);
+        self.Name = ko.observable(Name);
+        self.Item_Type = ko.observable(Item_Type);
+        self.Description = ko.observable(Description);
+        self.Price = ko.observable(Price);
+        self.Qty = ko.observable(Qty);
+        self.OldQty = ko.observable(Qty);
+        self.QtyRmng = ko.observable(QtyRmng);
+        self.QtyAllocatedToArea = ko.observable(QtyAllocatedToArea);
+        self.hasQty = ko.observable(QtyRmng != null);
+        self.QtyExceeded = ko.observable(false);
+        self.resetQty = ko.observable(false);
+        self.POCSpendCategory = ko.observable(POCSpendCategory);
+        self.TotalSpend = ko.computed(function() {
+            return self.Price() * self.Qty();
+        });
+        
+        self.SmlImage = ko.observable(SmlImage);
+        self.LrgImage = ko.observable(LrgImage);
+        self.Description = ko.observable(Description);
+        self.Size = ko.observable(Size);
+        self.Material = ko.observable(Material);
+        
+        if(typeof self.Size() == 'undefined'){
+            self.Size(null);
+        }
+        self.Dimensions = ko.observable(Dimensions);
+        if(typeof self.Dimensions() == 'undefined'){
+            self.Dimensions(null);
+        }
+        
+        self.Qty.subscribe(function(OldQty) {
+            var regex = new RegExp('^[0-9]+$');
+            if (regex.test(OldQty)) {
+                self.OldQty(OldQty);
+            }
+        }, null, 'beforeChange');
+        
+        self.ComputeDiff = ko.computed(function(){
+            return Math.round((parseInt(self.Qty() - self.OldQty()) * self.Price())*100)/100;
+        });
+        
+        self.Qty.subscribe(function() {
+            var regex = new RegExp('^[0-9]+$');
+            if ( regex.test( self.Qty() ) ) {
+                var alternateID = self.AltID() || null;
+                if (!self.hasQty()) {
+                    parent.sumBrandDriverSpend(self.Id(), self.ComputeDiff(), self.Qty(), self.OldQty(), self.hasQty(), self.POCSpendCategory(), alternateID);
+                } else if (self.Qty() - self.OldQty() > self.QtyRmng()) {
+                    self.QtyExceeded(true);
+                    self.resetQty(true);
+                    self.Qty(self.OldQty());
+                } else {
+                    if (!self.resetQty()) {
+                        self.QtyExceeded(false);
+                        parent.sumBrandDriverSpend(self.Id(), self.ComputeDiff(), self.Qty(), self.OldQty(), self.hasQty(), self.POCSpendCategory(),alternateID);
+                    } else {
+                        self.resetQty(false);
+                    }
+                }
+            } else if ( regex.test( self.OldQty() ) ) {
+                parent.toggleCustomizableModal(true, '{!$Label.Numeric_Value_Only}', '');
+                var oldValue = self.OldQty();
+                self.Qty(oldValue);
+                self.OldQty(oldValue);
+            } else {
+                parent.toggleCustomizableModal(true, '{!$Label.Numeric_Value_Only}', '');
+                self.Qty(0);
+            }
+        });
+        
+        self.toggleImage = function(show){
+            if (show && !parent.initialLoad) {
+                var Title = self.Name();
+                var Body = "<img src='"+ self.LrgImage() +"' alt='"+ self.Name() + "' width='auto' max-height='580px'>";
+                
+                parent.parent.loadDialog(Title, Body);
+                $('#modalGeneric').modal();
+            }
+        }
+        
+        self.planningDateCheck = ko.computed(function(){
+            var MyDate = new Date().getTime();
+            console.log('planningDateList',planningDateList);
+            console.log('planningDateListIH',planningDateListIH);
+            console.log('MyDate',MyDate);
+            console.log('planinmethod',plan);
+            var planningDateListWithBudgetYearOOH = [];
+            var planningDateListWithBudgetYearIH = [];
+            var flagOOH = false;
+            var flagIH = false;
+            for(var i=0; i<planningDateList.length ;i++){
+                if(plan == '{!$Label.Out_of_Home}' && planningDateList[i].Budget_Year__c == budgetYear){
+                    planningDateListWithBudgetYearOOH.push(planningDateList[i]);
+                }
+            }
+            for(var i=0; i<planningDateListIH.length ;i++){
+                if(plan == '{!$Label.In_Home_IH}' && planningDateListIH[i].Budget_Year__c == budgetYear){
+                    planningDateListWithBudgetYearIH.push(planningDateListIH[i]);
+                }
+            }
+            if(plan == '{!$Label.Out_of_Home}'){
+                if(planningDateListWithBudgetYearOOH.length > 0 ){
+                    for(var i=0; i<planningDateListWithBudgetYearOOH.length ;i++){
+                        if(approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}' ){
+                            console.log('return false for planning window1');
+                            return true;
+                            console.log('return false for planning window1.0');
+                        }else{
+                            if(planningDateListWithBudgetYearOOH[i].Plan_Start_Date__c < MyDate && planningDateListWithBudgetYearOOH[i].Plan_End_Date__c > MyDate ){
+                                console.log('return false for planning window2');
+                                flagOOH = false;
+                                return false;
+                                
+                            } else{
+                                flagOOH = true;
+                            }
+                        } 
+                    }
+                }else{
+                    return true;
+                }
+            }
+            if(flagOOH == true){
+                return true;
+            }
+            if(plan == '{!$Label.In_Home_IH}'){
+                if(planningDateListWithBudgetYearIH.length > 0 ){
+                    for(var i=0; i<planningDateListWithBudgetYearIH.length ;i++){
+                        if(approvalStatus == '{!$Label.Submitted_for_Approval_Label}'  || approvalStatus == '{!$Label.Approval_status_as_Approved}' ){
+                            console.log('return false for planning window1');
+                            return true;
+                            console.log('return false for planning window1.0');
+                        }else{
+                            if(planningDateListWithBudgetYearIH[i].Plan_Start_Date__c < MyDate && planningDateListWithBudgetYearIH[i].Plan_End_Date__c > MyDate ){
+                                console.log('return false for planning window2');
+                                flagIH = false;
+                                return false;
+                                
+                            } else{
+                                flagIH = true;
+                            }
+                        } 
+                    }
+                }else{
+                    return true;
+                }
+            }
+            if(flagIH == true){
+                return true;
+            }
+        }); 
+    }
+    
+    function itemType(parent, i, Name, data, HexColor) {
+        var self = this;
+        self.i = ko.observable(i);
+        self.Name = ko.observable(Name);
+        self.data = ko.observableArray(data);
+        self.HexColor = ko.observable(HexColor);
+        self.selected = ko.observable(false);
+        
+        self.selected.subscribe(function() {
+            if (self.selected()) {
+                parent.HexColor(self.HexColor());
+                parent.unselectItemType();
+            }
+        });
+    }
+    </script>
+    
+    <div class="POCPlanningDriver" id="POCPlanningDriverId">
+        
+        <div data-bind="foreach: BrandList" class= "BrandProgramNav row" id="BrandProgramNav">
+            <div data-bind="click: $parent.loadBrandItems(i()), style: {'background-color': selected() ? HexColor() == null ? 'rgb(2, 16, 64)' : HexColor() : '#bbbdbf'}" class="BrandNav">
+                <div data-bind="html: Name"/>
+                <div>
+                    $<span data-bind="text: setupNumbers(itemSpend())"/>
+                </div>
+            </div>          
+        </div>
+        
+        <div class="row"  style="padding-top: 30px">
+            <div class = "ProgramNav col-sm-2 col-md-2 sidebar" id="ProgramNav">
+                <ul data-bind="foreach: typeList" class="nav nav-sidebar">
+                    <li data-bind="click: $parent.loadItemTypes(i()), style: {'background-color': selected() ? HexColor() == null ? 'rgb(2, 16, 64)' : HexColor()  : '#f4f4f4', color: selected() ? '#ffffff' : '#000000'}">
+                        <div data-bind="html: Name" />
+                    </li>
+                </ul>
+            </div>
+            
+            <div class = "ProgramShop col-sm-10 col-md-10 main" id="ProgramShop">
+                <div class="row" data-bind="foreach: itemList" >
+                    <div class="col-sm-6 col-md-4 POCPlanningItemContainer">
+                        <div class="POCPlanningItem">
+                            <div class="POCPlanningItemImage">
+                                <img class="POCPlanningItemImageSm" data-bind="attr: {src: SmlImage, alt: parent.parent.htmlEnDeCode.htmlDecode(Name())}, click: toggleImage(true)"/>
+                            </div>
+                            <div class="POCPlanningItemDesc">
+                                <div class="ItemDetail">
+                                    {!$Label.Name}:
+                                    <span data-bind="html: Name"/>
+                                </div>
+                                <div class="ItemDescription">
+                                    {!$Label.Description}:
+                                    <span data-bind="html: Description"/>
+                                </div>
+                                <div class="ItemDetail">
+                                    {!$Label.Type}:
+                                    <span data-bind="html: Item_Type"/>
+                                </div>
+                                <div class="ItemDetail">
+                                    {!$Label.Size}:
+                                    <span data-bind="html: Size() != null ? Size() : 'N/A'"/>
+                                </div>
+                                <div class="ItemDetail">
+                                    {!$Label.Material}:                                 
+                                    <span data-bind="html: Material"/>
+                                </div>
+                                <div class="ItemDetail">
+                                    {!$Label.Price}:
+                                    $<span data-bind="text: setupNumbers(Price())"/>
+                                </div>
+                                <div>
+                                    Qty:
+                                    <input data-bind="value: Qty, disable: planningDateCheck" type="text"/>
+                                    <span data-bind="visible: hasQty">
+                                        <span data-bind="text: setupNumbers(QtyRmng())" /> {!$Label.of}
+                                        <span data-bind="text: setupNumbers(QtyAllocatedToArea())" /> {!$Label.Remaining}.
+                                    </span>
+                                </div>
+                                <div data-bind="visible: QtyExceeded"><span style="color: red" data-bind="text: '{!$Label.Qty_Exceeded_Message}'"/></div>
+                            </div>
+                        </div>                      
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+</apex:page>

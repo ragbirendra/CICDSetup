@@ -1,0 +1,99 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,force:hasRecordId" 
+                access="global" controller="POCPKIVolDiscUpdateCtrl">
+    
+    <aura:attribute name="selectedBudgetYear" type="String" default="" />
+    <aura:attribute name="selectedBusLine" type="String" default="" />
+    <aura:attribute name="yearOptions" type="String[]" />
+    <aura:attribute name="previewData" type="List" description="data to render in table"/>
+    <aura:attribute name="headerData" type="String[]" description="attribute to show table header" />
+    <aura:attribute name="isLoading" type="Boolean" default="false" />
+    <aura:attribute name="isValidationPassed" type="Boolean" default="false" />
+    <aura:attribute name="sampleHeader" type="String" default="Territory Code,Budget Year,Business Line,Assigned KI Volume,Discretionary Budget" />
+    <aura:attribute name="sampleRow" type="String" default="10123,2021,Out of Home,100,200" />
+    <aura:attribute name="numberColumns" type="String" default="Territory Code,Assigned KI Volume,Discretionary Budget" />
+    <aura:attribute name="checkYearColumn" type="String" default="Budget Year" />
+    <aura:attribute name="checkBusLineColumn" type="String" default="Business Line" />
+    <aura:attribute name="budgetDataList" type="List" />
+    <aura:attribute name="matchingDataSet" type="List" />
+    <aura:attribute name="msgToPass" type="String[]"   />
+    <aura:attribute name="openModal" type="Boolean" default="false" /> 
+    <aura:handler value="{!this}" name="init" action="{!c.doInit}" />
+    <aura:if isTrue="{!v.openModal}">
+        <c:ModalPopup msgToPass="{!v.msgToPass}" openModal="{!v.openModal}" />
+    </aura:if>
+    <aura:if isTrue="{!v.isLoading}">
+        <lightning:spinner variant="brand" size="medium" 
+                           aura:id="lightSpin" alternativeText="Please wait..."/> 
+        <span id="spinText" class="spins">{! v.loadMoreStatus }</span>       
+    </aura:if>
+    <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_warning" role="alert" style="margin: 3px;">
+        <h2>
+            Please choose the Budget Year and Business Line to proceed with File Upload
+        </h2>
+    </div>
+    <lightning:layout horizontalAlign="left" multipleRows="true">
+        
+        
+        <lightning:layoutItem size="2" padding="around-small">
+            <lightning:select name="selectElem" label="Select Budget Year" aura:id="selBudgetYr" value="{!v.selectedBudgetYear}" required="true" >
+                <option text="--Please Select--" value=""></option>
+                <aura:iteration items="{!v.yearOptions}" var="yearOpt">
+                    <option text="{!yearOpt}" value="{!yearOpt}"></option>
+                </aura:iteration>
+            </lightning:select>
+        </lightning:layoutItem>
+        
+        <lightning:layoutItem size="2" padding="around-small">
+            <lightning:select name="selBusLine" label="Select Business Line" aura:id="selBusLn" value="{!v.selectedBusLine}" required="true" >
+                <option text="--Please Select--" value=""></option>
+                <option text="Out of Home" value="Out of Home"></option>
+                <option text="In Home" value="In Home"></option>
+            </lightning:select>
+        </lightning:layoutItem>
+        
+        <lightning:layoutItem size="4" padding="around-small">                        
+            <lightning:input name="csvFileElem" type="file" label="Upload CSV" 
+                             multiple="true" accept=".csv" onchange="{! c.handleFilesChange }"
+                             disabled="{! or(v.selectedBudgetYear == '', v.selectedBusLine == '')}"/>
+        </lightning:layoutItem>
+        <lightning:layoutItem size="4" padding="around-small">
+            <lightning:button label="Export Template" onclick="{!c.downloadCsv}" variant="brand"/>
+            
+        </lightning:layoutItem>
+       
+        <lightning:layoutItem size="6" padding="around-small">                        
+            <span>Please note:</span>
+            <ul>
+                <li><span style="font-style: italic; color: red; font-size: 12px;">For KI Vol and Discretionary Budget if there are no values please put zero</span></li>
+                <li><span style="font-style: italic; color: red; font-size: 12px;">The values in the file should not contain a comma as that will result in parsing error</span></li>
+            </ul>
+        </lightning:layoutItem>
+    </lightning:layout>
+
+
+<aura:if isTrue="{! and(v.previewData != null, v.previewData.length>0) }">
+    <div aura:id="tableCont" style="border: 1px solid black; margin: 5px;">
+        <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_info" role="alert" style="width: 100%;">
+            <h2>
+                Please click on Validate button first and then proceed with Save operation
+            </h2>
+        </div>
+        <lightning:layout multipleRows="true">
+            <lightning:layoutItem size="12" padding="around-small">
+                <lightning:button name="valButt" label="Validate Data" onclick="{!c.validateData}" variant="brand" /> &nbsp; &nbsp;
+                <lightning:button name="saveButt" label="Upload Data" onclick="{!c.saveFunction}" variant="brand" disabled="{! not(v.isValidationPassed)}" /> &nbsp; &nbsp;
+                <lightning:button name="clearButt" label="Clear Data" onclick="{!c.clearAllData}" variant="brand" />
+            </lightning:layoutItem>
+            
+            <lightning:layoutItem size="12" padding="around-small">
+                <lightning:datatable keyField="Territory Code" 
+                                     data="{! v.previewData }"
+                                     columns="{! v.headerData }" 
+                                     hideCheckboxColumn = "true" 
+                                     showRowNumberColumn	= "true"/>  
+            </lightning:layoutItem>
+        </lightning:layout>
+    </div> 
+</aura:if>
+
+</aura:component>
